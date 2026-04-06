@@ -1,1 +1,74 @@
 
+■全体の流れ
+onInit
+   ↓
+onBeforeRendering
+   ↓
+画面表示
+   ↓
+onAfterRendering
+   ↓
+（画面閉じる）
+   ↓
+onExit
+
+■これは「拡張」というより、✔ 自分で上書き・追加するイメージ
+① 自分で作ったFioriアプリ（通常のUI5アプリ）の場合
+👉 普通にイベントは自由に拡張（実装）可能です
+例えばコントローラ：
+onInit: function () {
+    // 初期処理（拡張OK）
+},
+onBeforeRendering: function () {
+    // 描画前処理
+},
+onAfterRendering: function () {
+    // 描画後処理
+},
+onExit: function () {
+    // 終了処理
+}
+
+■標準Fioriアプリを拡張する場合（重要
+sap.ui.controller("xxx.ext.controller", {
+    onInit: function () {
+        // 標準のonInitに追加処理
+    }
+});
+
+
+********************************************************
+制御の方法（ここが本質）
+① 表示・非表示
+@UI.hidden: true
+② 編集可否（重要）
+@UI.readOnly: true
+
+または
+
+@UI.readOnly: [{ path: 'Status', value: 'APPROVED' }]
+③ ボタン制御（アクション）
+@UI.lineItem: [
+  {
+    type: #FOR_ACTION,
+    dataAction: 'approve',
+    label: '承認'
+  }
+]
+
+👉 ボタンが自動生成される
+
+④ 項目の並び順
+@UI.lineItem: [{ position: 10 }]
+⑤ セクション分け
+@UI.facet: [
+  {
+    id: 'General',
+    type: #FIELDGROUP_REFERENCE,
+    targetQualifier: 'General'
+  }
+]
+
+
+
+
