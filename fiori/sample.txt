@@ -1,0 +1,13 @@
+onInit: function() {
+    var oCrossAppNav = this.getOwnerComponent().getCrossAppNavigation();
+    var sMode = oCrossAppNav.getCurrentIntent().getParameter("Mode");
+    
+    var oViewModel = new sap.ui.model.json.JSONModel({
+        mode: sMode
+    });
+    this.getView().setModel(oViewModel, "ui");
+}
+
+<Button text="処理" 
+        enabled="{= ${ui>/mode} !== 'ReadOnly' }"
+        press="onCustomAction"/>
