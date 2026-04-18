@@ -1,0 +1,4 @@
+■https://sdk.openui5.org/からダウンロードした、下記の操作をする必要です
+npm install
+npm install -g @ui5/cli	➡しないで下記の起動できそうです
+ui5 serve -o index.html
