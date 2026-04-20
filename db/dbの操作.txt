@@ -1,0 +1,330 @@
+
+*********************************************************************
+CreateTables.sql
+*********************************************************************
+/*==============================================================*/
+/* Table: CUSTOMER                                              */
+/*==============================================================*/
+create table TPCH.CUSTOMER (
+   C_CUSTKEY            integer                        not null iq unique (150000),
+   C_NAME               varchar(25)                    not null,
+   C_ADDRESS            varchar(40)                    not null,
+   C_NATIONKEY          integer                        not null iq unique (25),
+   C_PHONE              char(15)                       not null,
+   C_ACCTBAL            decimal(15,2)                  not null,
+   C_MKTSEGMENT         char(10)                       not null,
+   C_COMMENT            varchar(117)                   not null,
+   constraint PK_CUSTOMER primary key (C_CUSTKEY)
+);
+
+
+/*==============================================================*/
+/* Table: NATION                                                */
+/*==============================================================*/
+create table TPCH.NATION (
+   N_NATIONKEY          integer                        not null iq unique (25),
+   N_NAME               char(25)                       not null,
+   N_REGIONKEY          integer                        not null iq unique (5),
+   N_COMMENT            varchar(152)                   not null,
+   constraint PK_NATION primary key (N_NATIONKEY)
+);
+
+
+/*==============================================================*/
+/* Table: REGION                                                */
+/*==============================================================*/
+create table TPCH.REGION (
+   R_REGIONKEY          integer                        not null iq unique (5),
+   R_NAME               char(25)                       not null,
+   R_COMMENT            varchar(152)                   not null,
+   constraint PK_REGION primary key (R_REGIONKEY)
+);
+
+
+/*==============================================================*/
+/* Table: SUPPLIER                                              */
+/*==============================================================*/
+create table TPCH.SUPPLIER (
+   S_SUPPKEY            integer                        not null iq unique (10000),
+   S_NAME               char(25)                       not null,
+   S_ADDRESS            varchar(40)                    not null,
+   S_NATIONKEY          integer                        not null iq unique (25),
+   S_PHONE              char(15)                       not null,
+   S_ACCTBAL            decimal(15,2)                  not null,
+   S_COMMENT            varchar(101)                   not null,
+   constraint PK_SUPPLIER primary key (S_SUPPKEY)
+);
+
+alter table TPCH.CUSTOMER
+   add foreign key FK_CUSTOMER_REFERENCE_NATION (C_NATIONKEY)
+      references TPCH.NATION (N_NATIONKEY)
+      on delete restrict on update restrict;
+
+alter table TPCH.NATION
+   add foreign key FK_NATION_REFERENCE_REGION (N_REGIONKEY)
+      references TPCH.REGION (R_REGIONKEY)
+      on delete restrict on update restrict;
+
+alter table TPCH.SUPPLIER
+   add foreign key FK_SUPPLIER_REFERENCE_NATION (S_NATIONKEY)
+      references TPCH.NATION (N_NATIONKEY)
+      on delete restrict on update restrict;
+
+*********************************************************************
+DropTables.sql
+*********************************************************************
+/*==============================================================*/
+/* DBMS name:      Data Lake                                    */
+/* Created on:     xx/xx/20xx                                   */
+/*==============================================================*/
+/*==============================================================*/
+/* User: TPCH                                                   */
+/*==============================================================*/
+/* Tables:                                          */
+/*==============================================================*/
+drop table TPCH.SUPPLIER;
+drop table TPCH.CUSTOMER;
+drop table TPCH.NATION;
+drop table TPCH.REGION;
+
+/* Drop User, uncomment following line to drop user as well */
+/* DROP USER TPCH;                                         */
+
+
+
+*********************************************************************
+LoadTables_AWS.sql
+*********************************************************************
+/* Create an S3 bucket in AWS */
+/* Change the following variables: <your_bucket_name>, <your_access_key_id>, <your_secret_access_key>, <your_aws_region> */
+
+set temporary option escape_character='on'
+go
+set temporary option date_order='ymd'
+go
+set temporary option date_format='YYYY-MM-DD'
+go
+
+truncate table TPCH.REGION;
+commit;
+
+load table TPCH.REGION (
+R_REGIONKEY,
+R_NAME,
+R_COMMENT
+)
+from 's3://<your_bucket_name>/region.tbl'
+ACCESS_KEY_ID '<your_access_key_id>'
+SECRET_ACCESS_KEY '<your_secret_access_key>' 
+REGION '<your_aws_region>'
+quotes off
+escapes off
+format ascii
+delimited by '|'
+row delimited by '\n'
+;
+commit
+;
+rollback
+;
+
+truncate table TPCH.NATION;
+commit;
+
+load table TPCH.NATION (
+   N_NATIONKEY,
+   N_NAME,
+   N_REGIONKEY,
+   N_COMMENT
+)
+from 's3://<your_bucket_name>/nation.tbl'
+ACCESS_KEY_ID '<your_access_key_id>'
+SECRET_ACCESS_KEY '<your_secret_access_key>' 
+REGION '<your_aws_region>'
+quotes off
+escapes off
+format ascii
+delimited by '|'
+row delimited by '\n'
+;
+commit
+;
+rollback
+;
+
+truncate table TPCH.SUPPLIER;
+commit;
+
+load table TPCH.SUPPLIER (
+   S_SUPPKEY,
+   S_NAME,
+   S_ADDRESS,
+   S_NATIONKEY,
+   S_PHONE,
+   S_ACCTBAL,
+   S_COMMENT
+)
+from 's3://<your_bucket_name>/supplier.tbl'
+ACCESS_KEY_ID '<your_access_key_id>'
+SECRET_ACCESS_KEY '<your_secret_access_key>' 
+REGION '<your_aws_region>'
+quotes off
+escapes off
+format ascii
+delimited by '|'
+row delimited by '\n'
+;
+commit
+;
+rollback
+;
+
+truncate table TPCH.CUSTOMER;
+commit;
+
+load table TPCH.CUSTOMER (
+   C_CUSTKEY,
+   C_NAME,
+   C_ADDRESS,
+   C_NATIONKEY,
+   C_PHONE,
+   C_ACCTBAL,
+   C_MKTSEGMENT,
+   C_COMMENT            
+)
+from 's3://<your_bucket_name>/customer.tbl'
+ACCESS_KEY_ID '<your_access_key_id>'
+SECRET_ACCESS_KEY '<your_secret_access_key>' 
+REGION '<your_aws_region>'
+quotes off
+escapes off
+format ascii
+delimited by '|'
+row delimited by '\n'
+;
+commit
+;
+rollback
+;
+
+
+
+*********************************************************************
+LoadTables_Azure.sql
+*********************************************************************
+/* Create an S3 bucket in AWS */
+/* Change the following variables: <azure_container_name>, <azure_connection_string> */
+
+set temporary option escape_character='on'
+go
+set temporary option date_order='ymd'
+go
+set temporary option date_format='YYYY-MM-DD'
+go
+
+truncate table TPCH.REGION;
+commit;
+
+load table TPCH.REGION (
+R_REGIONKEY,
+R_NAME,
+R_COMMENT
+)
+from 'BB://<azure_container_name>/region.tbl'
+CONNECTION_STRING '<azure_connection_string>'
+quotes off
+escapes off
+format ascii
+delimited by '|'
+row delimited by '\n'
+;
+commit
+;
+rollback
+;
+
+truncate table TPCH.NATION;
+commit;
+
+load table TPCH.NATION (
+   N_NATIONKEY,
+   N_NAME,
+   N_REGIONKEY,
+   N_COMMENT
+)
+from 'BB://<azure_container_name>/nation.tbl'
+CONNECTION_STRING '<azure_connection_string>'
+quotes off
+escapes off
+format ascii
+delimited by '|'
+row delimited by '\n'
+;
+commit
+;
+rollback
+;
+
+truncate table TPCH.SUPPLIER;
+commit;
+
+load table TPCH.SUPPLIER (
+   S_SUPPKEY,
+   S_NAME,
+   S_ADDRESS,
+   S_NATIONKEY,
+   S_PHONE,
+   S_ACCTBAL,
+   S_COMMENT
+)
+from 'BB://<azure_container_name>/supplier.tbl'
+CONNECTION_STRING '<azure_connection_string>'
+quotes off
+escapes off
+format ascii
+delimited by '|'
+row delimited by '\n'
+;
+commit
+;
+rollback
+;
+
+truncate table TPCH.CUSTOMER;
+commit;
+
+load table TPCH.CUSTOMER (
+   C_CUSTKEY,
+   C_NAME,
+   C_ADDRESS,
+   C_NATIONKEY,
+   C_PHONE,
+   C_ACCTBAL,
+   C_MKTSEGMENT,
+   C_COMMENT            
+)
+from 'BB://<azure_container_name>/customer.tbl'
+CONNECTION_STRING '<azure_connection_string>'
+quotes off
+escapes off
+format ascii
+delimited by '|'
+row delimited by '\n'
+;
+commit
+;
+rollback
+;
+
+
+*********************************************************************
+TruncateTables.sql
+*********************************************************************
+truncate table TPCH.SUPPLIER
+truncate table TPCH.CUSTOMER
+truncate table TPCH.NATION
+truncate table TPCH.REGION
+
+
+
+
