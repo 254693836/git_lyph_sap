@@ -2,3 +2,144 @@
 npm install
 npm install -g @ui5/cli	➡しないで下記の起動できそうです
 ui5 serve -o index.html
+
+
+
+const result = data
+  .filter(item => item.a === "X")
+  .reduce((max, item) =>
+    item.b > max.b ? item : max,
+    data.find(item => item.a === "X")
+  );
+
+*****************************************
+#/OrderManage(OrderId='10001')?sap-language=JA
+#              → Fiori内画面
+/OrderManage   → アプリ画面
+()             → キー
+?              → パラメータ開始
+sap-language   → 言語指定
+記号	意味
+#	画面遷移
+/	階層
+()	キー
+?	パラメータ
+&	複数条件
+%20	空白
+*****************************************
+1. Node.js / 環境確認
+最初に環境確認します。
+node -v
+npm -v
+Node.js バージョン確認
+npm バージョン確認
+2. Fiori Tools インストール
+初回だけ必要です。
+npm install -g @sap/generator-fiori
+または Yeoman がない場合
+npm install -g yo
+3. 新規プロジェクト作成
+Fioriアプリ作成
+yo @sap/fiori
+このコマンドで：
+Application type選択
+OData service選択
+Project名入力
+namespace入力
+4. 依存関係インストール
+プロジェクト作成後
+npm install
+
+略式：
+
+npm i
+5. ローカル起動
+
+開発中によく使う
+
+npm start
+
+または
+
+ui5 serve
+
+ブラウザで起動：
+
+http://localhost:8080
+6. キャッシュ削除
+
+表示がおかしい時
+
+npm cache clean --force
+7. Lintチェック
+
+コード確認
+
+npm run lint
+
+自動修正
+
+npm run lint:fix
+8. ビルド
+
+デプロイ前に圧縮
+
+npm run build
+
+または
+
+ui5 build --clean-dest
+9. BTP / ABAPへデプロイ
+ABAPシステムへ
+npm run deploy
+
+内部では通常：
+fiori add deploy-config
+設定後
+fiori deploy
+または
+npx fiori deploy
+10. npm更新
+ライブラリ更新
+npm update
+11. 不具合時に再インストール
+node_modules再作成
+rm -rf node_modules
+npm install
+
+Windowsなら
+
+rmdir /s /q node_modules
+npm install
+一番よく使うコマンドだけ
+
+実務ではこの4つが特に多いです。
+
+yo @sap/fiori
+npm install
+npm start
+npm run deploy
+開発の流れ
+
+流れで見ると：
+
+yo @sap/fiori
+npm install
+npm start
+npm run build
+npm run deploy
+************************************
+・新規フォルダ
+mkdir my_fiori_app
+完了すると以下が作られます。
+webapp/
+package.json
+ui5.yaml
+manifest.json
+
+
+***********************************
+https://sdk.openui5.org/からダウンロードした、下記の操作をする必要です
+npm install
+npm install -g @ui5/cli	➡しないで下記の起動できそうです
+ui5 serve -o index.html
