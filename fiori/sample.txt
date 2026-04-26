@@ -61,3 +61,13 @@ sap.ui.define([], function () {
         }
     };
 });
+
+
+
+
+const result = data
+  .filter(item => item.a === "X")
+  .reduce((max, item) =>
+    item.b > max.b ? item : max,
+    data.find(item => item.a === "X")
+  );
