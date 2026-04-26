@@ -11,3 +11,53 @@ onInit: function() {
 <Button text="処理" 
         enabled="{= ${ui>/mode} !== 'ReadOnly' }"
         press="onCustomAction"/>
+
+
+
+
+sap.ui.define([], function () {
+    "use strict";
+
+    return {
+        override: {
+            routing: {
+                onBeforeNavigation: function (oContextInfo) {
+
+                    const oContext = oContextInfo.bindingContext;
+                    const oSelectedData = oContext.getObject();
+
+                    console.log(oSelectedData);
+
+                    return false;
+                }
+            }
+        }
+    };
+});
+
+sap.ui.define([], function () {
+    "use strict";
+
+    return {
+        override: {
+            routing: {
+                onBeforeNavigation: function (oContextInfo) {
+
+                    const oTable = this.base.getExtensionAPI().getTable();
+
+                    const oBinding = oTable.getBinding("items");
+
+                    const aContexts = oBinding.getContexts();
+
+                    const aAllData = aContexts.map(function (oContext) {
+                        return oContext.getObject();
+                    });
+
+                    console.log(aAllData);
+
+                    return false;
+                }
+            }
+        }
+    };
+});
