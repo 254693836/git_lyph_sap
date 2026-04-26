@@ -1,0 +1,185 @@
+***********************************************
+{
+  "sap.app": {
+    "id": "zemployee",
+    "type": "application",
+    "title": "Employee App",
+    "dataSources": {
+      "mainService": {
+        "uri": "/sap/opu/odata4/xxx/",
+        "type": "OData",
+        "settings": {
+          "odataVersion": "4.0"
+        }
+      }
+    }
+  },
+
+  "sap.ui": {
+    "technology": "UI5"
+  },
+
+  "sap.ui5": {
+
+    "models": {
+      "i18n": {
+        "type": "sap.ui.model.resource.ResourceModel"
+      },
+      "localModel": {
+        "type": "sap.ui.model.json.JSONModel"
+      }
+    },
+
+    "dataSources": {
+      "mainService": {
+        "uri": "/sap/opu/odata4/xxx/",
+        "type": "OData",
+        "settings": {
+          "odataVersion": "4.0"
+        }
+      }
+    },
+
+    "routing": {
+      "config": {
+        "routerClass": "sap.f.routing.Router",
+        "viewType": "XML",
+        "controlId": "app",
+        "transition": "slide"
+      },
+
+      "routes": [
+        {
+          "pattern": "",
+          "name": "ListReport",
+          "target": "ListReport"
+        },
+        {
+          "pattern": "Employee({key})",
+          "name": "ObjectPage",
+          "target": "ObjectPage"
+        }
+      ],
+
+      "targets": {
+
+        "ListReport": {
+          "type": "Component",
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "entitySet": "Employees",
+
+              "controlConfiguration": {
+                "@com.sap.vocabularies.UI.v1.LineItem": {
+                  "actions": {
+                    "ApproveAction": {
+                      "text": "承認",
+                      "press": "zemployee.ext.controller.ListReportExt.onApprove"
+                    },
+                    "DeleteAction": {
+                      "text": "削除",
+                      "press": "zemployee.ext.controller.ListReportExt.onDelete"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+
+        "ObjectPage": {
+          "type": "Component",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "entitySet": "Employees",
+
+              "content": {
+                "body": {
+                  "sections": {
+                    "CustomSection": {
+                      "template": "zemployee.ext.fragment.CustomSection",
+                      "title": "追加情報"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "extends": {
+      "extensions": {
+
+        "sap.ui.controllerExtensions": {
+
+          "sap.fe.templates.ListReport.ListReportController": {
+            "controllerName": "zemployee.ext.controller.ListReportExt"
+          },
+
+          "sap.fe.templates.ObjectPage.ObjectPageController": {
+            "controllerName": "zemployee.ext.controller.ObjectPageExt"
+          }
+        }
+      }
+    }
+  }
+}
+
+*****************************************************************************
+"routing": {
+  "routes": [
+    {
+      "pattern": "",
+      "name": "ListReport",
+      "target": "ListReport"
+    },
+    {
+      "pattern": "Employee({key})",
+      "name": "ObjectPage",
+      "target": "ObjectPage"
+    },
+
+    {
+      "pattern": "Employee({key})/ChildEntity({childKey})",
+      "name": "ChildObjectPage",
+      "target": "ChildObjectPage"
+    }
+  ],
+
+  "targets": {
+
+    "ListReport": {
+      "type": "Component",
+      "name": "sap.fe.templates.ListReport",
+      "options": {
+        "settings": {
+          "entitySet": "Employee"
+        }
+      }
+    },
+
+    "ObjectPage": {
+      "type": "Component",
+      "name": "sap.fe.templates.ObjectPage",
+      "options": {
+        "settings": {
+          "entitySet": "Employee"
+        }
+      }
+    },
+
+    "ChildObjectPage": {
+      "type": "Component",
+      "name": "sap.fe.templates.ObjectPage",
+      "options": {
+        "settings": {
+          "entitySet": "ChildEntity"
+        }
+      }
+    }
+  }
+}
