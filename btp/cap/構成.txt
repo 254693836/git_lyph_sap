@@ -1,0 +1,321 @@
+■プロジェクト構成
+myapp/
+ ├ app/
+ │   └ searchapp/
+ │       └ webapp/
+ │           ├ manifest.json
+ │           ├ view/
+ │           │   └ Main.view.xml
+ │           └ controller/
+ │               └ Main.controller.js
+ │
+ ├ db/
+ │   └ schema.cds
+ │
+ ├ srv/
+ │   ├ service.cds
+ │   └ src/main/java/com/example/
+ │       └ SearchHandler.java
+ │
+ └ pom.xml
+
+① db/schema.cds
+namespace my.company;
+
+entity Employees {
+    key ID   : Integer;
+        Name : String(100);
+}
+
+※cds deployまたはmvn spring-boot:run➡DBテーブル自動作成
+
+② srv/service.cds
+using my.company from '../db/schema';
+
+service SearchService {
+
+    entity Employees as projection on my.company.Employees;
+
+    function searchEmployee(keyword : String) returns array of Employees;
+}
+
+③ SearchHandler.java
+package com.example;
+
+import com.sap.cds.Result;
+import com.sap.cds.ql.Select;
+import com.sap.cds.services.handler.EventHandler;
+import com.sap.cds.services.handler.annotations.On;
+import com.sap.cds.services.handler.annotations.ServiceName;
+import org.springframework.stereotype.Component;
+
+@Component
+@ServiceName("SearchService")
+public class SearchHandler implements EventHandler {
+
+    @On(event = "searchEmployee")
+    public Result searchEmployee(SearchServiceContext context) {
+
+        String keyword = (String) context.getParameterInfo()
+                .getQueryParameter("keyword");
+
+        return context.getService().run(
+            Select.from("my.company.Employees")
+                  .where(e -> e.get("Name").like("%" + keyword + "%"))
+        );
+    }
+}
+
+④ app/searchapp/webapp/manifest.json
+{
+  "sap.app": {
+    "id": "searchapp",
+    "dataSources": {
+      "mainService": {
+        "uri": "/odata/v4/SearchService/",
+        "type": "OData",
+        "settings": {
+          "odataVersion": "4.0"
+        }
+      }
+    }
+  },
+  "sap.ui5": {
+    "models": {
+      "": {
+        "dataSource": "mainService"
+      }
+    }
+  }
+}
+
+⑤ Main.view.xml
+<mvc:View
+    controllerName="searchapp.controller.Main"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m">
+
+    <VBox class="sapUiSmallMargin">
+        <Input id="inputKeyword" placeholder="名前を入力" />
+        <Button text="検索" press="onSearch" />
+    </VBox>
+
+</mvc:View>
+
+
+⑥ Main.controller.js
+sap.ui.define([
+    "sap/ui/core/mvc/Controller"
+], function (Controller) {
+    "use strict";
+
+    return Controller.extend("searchapp.controller.Main", {
+
+        onSearch: async function () {
+
+            const oModel = this.getView().getModel();
+            const sKeyword = this.byId("inputKeyword").getValue();
+
+            const oBinding = oModel.bindContext("/searchEmployee(...)");
+
+            oBinding.setParameter("keyword", sKeyword);
+
+            await oBinding.execute();
+
+            const aResult = oBinding.getBoundContext().getObject();
+
+            console.log(aResult);
+        }
+
+    });
+});
+
+
+⑦ pom.xml
+<project>
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>my.company</groupId>
+    <artifactId>myapp</artifactId>
+    <version>1.0.0</version>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.sap.cds</groupId>
+            <artifactId>cds-starter-spring-boot</artifactId>
+        </dependency>
+    </dependencies>
+</project>
+
+⑧ 実行イメージ
+画面：
+
+keyword: [Tanaka]
+[検索]
+
+送信：
+
+{
+  "keyword": "Tanaka"
+}
+
+backend検索：
+
+WHERE Name LIKE '%Tanaka%'
+
+戻り値：
+
+[
+  {
+    "ID": 1,
+    "Name": "Tanaka"
+  }
+]
+
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+
+JavaScript 側
+
+入力値をまとめて送ります。
+
+onCreate: async function () {
+
+    const oModel = this.getView().getModel();
+
+    const oBinding = oModel.bindContext("/createEmployee(...)");
+
+    oBinding.setParameter("data", {
+        Name:  "田中一郎",
+        Email: "tanaka@test.com",
+        Dept:  "Sales"
+    });
+
+    await oBinding.execute();
+
+    const oResult = oBinding.getBoundContext().getObject();
+
+    console.log(oResult);
+}
+
+Java backend 実装
+SearchHandler.java
+@Component
+@ServiceName("SearchService")
+public class SearchHandler implements EventHandler {
+
+    @On(event = "createEmployee")
+    public void createEmployee(CreateEmployeeContext context) {
+
+        Map<String, Object> data = context.getData();
+
+        String name  = (String) data.get("Name");
+        String email = (String) data.get("Email");
+        String dept  = (String) data.get("Dept");
+
+        context.getService().run(
+            Insert.into("my.company.Employees")
+                  .entry(Map.of(
+                      "Name",  name,
+                      "Email", email,
+                      "Dept",  dept
+                  ))
+        );
+
+        context.setResult("登録しました");
+    }
+}
+
+
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+
+1. service.cds
+using my.company from '../db/schema';
+
+type EmployeeInput {
+    Name  : String(100);
+    Email : String(200);
+    Dept  : String(50);
+}
+
+service SearchService {
+    action createEmployee(data : EmployeeInput) returns String;
+}
+
+2. Java backend
+@Component
+@ServiceName("SearchService")
+public class SearchHandler implements EventHandler {
+
+    @On(event = "createEmployee")
+    public void createEmployee(CreateEmployeeContext context) {
+
+        EmployeeInput input = context.getData();
+
+        context.getService().run(
+            Insert.into("my.company.Employees")
+                  .entry(Map.of(
+                      "Name", input.getName(),
+                      "Email", input.getEmail(),
+                      "Dept", input.getDept()
+                  ))
+        );
+
+        context.setResult("登録しました");
+    }
+}
+
+3. view.xml
+<VBox>
+    <Input value="{localModel>/Name}" placeholder="名前" />
+    <Input value="{localModel>/Email}" placeholder="メール" />
+    <Input value="{localModel>/Dept}" placeholder="部署" />
+    <Button text="登録" press="onCreate" />
+</VBox>
+
+4. controller.js 完成例
+sap.ui.define([
+    "sap/ui/core/mvc/Controller",
+    "sap/ui/model/json/JSONModel"
+], function (Controller, JSONModel) {
+    "use strict";
+
+    return Controller.extend("searchapp.controller.Main", {
+
+        onInit: function () {
+            this.getView().setModel(
+                new JSONModel({
+                    Name: "",
+                    Email: "",
+                    Dept: ""
+                }),
+                "localModel"
+            );
+        },
+
+        onCreate: async function () {
+
+            const oData = this.getView().getModel("localModel").getData();
+
+            const oModel = this.getView().getModel();
+
+            const oBinding = oModel.bindContext("/createEmployee(...)");
+
+            oBinding.setParameter("data", oData);
+
+            await oBinding.execute();
+
+            const sResult = oBinding.getBoundContext().getObject();
+
+            console.log(sResult);
+        }
+
+    });
+});
+
+
+
+
+
+
