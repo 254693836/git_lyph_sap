@@ -5,12 +5,6 @@ ui5 serve -o index.html
 
 
 
-const result = data
-  .filter(item => item.a === "X")
-  .reduce((max, item) =>
-    item.b > max.b ? item : max,
-    data.find(item => item.a === "X")
-  );
 
 *****************************************
 #/OrderManage(OrderId='10001')?sap-language=JA
