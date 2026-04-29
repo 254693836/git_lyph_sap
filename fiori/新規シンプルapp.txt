@@ -4,7 +4,7 @@ vscode:https://code.visualstudio.com/
 
 ①ui5のインストール
 npm install --global @ui5/cli
-②フォルダapp1を作成して、app1でinitを動きます
+②フォルダapp1を作成して、app1でinitを動きます➡package.jsonを作成する
 npm init --yes
 ③app1中にwebappフォルダを作成する
 ④app1に下記命令を実行してui5.yamlを作成する
