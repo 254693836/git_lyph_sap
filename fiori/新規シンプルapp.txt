@@ -1,0 +1,53 @@
+開発環境のインストール：nodejs
+nodejs:https://nodejs.org/en/
+vscode:https://code.visualstudio.com/
+
+①ui5のインストール
+npm install --global @ui5/cli
+②フォルダapp1を作成して、app1でinitを動きます
+npm init --yes
+③app1中にwebappフォルダを作成する
+④app1に下記命令を実行してui5.yamlを作成する
+ui5 init
+※windowsのvscodeで、下記のエラーが出てかもしれません
+ui5 : C:\Users\xxxx\npm\ui5.ps1 「about_Execution_Polic 
+ies」(https://go.microsoft.com/fwlink/?LinkID=135170) 
++ ui5 init
++ ~~~
++ FullyQualifiedErrorId : UnauthorizedAccess
+★解決方法：管理者としてpowershellを実行して，
+Set-ExecutionPolicy RemoteSigned
+引数入力する必要場合：Aを入力してください
+⑤webappでmanifest.jsonを作成する
+{
+    "sap.app": {
+        "id": "sap.ui.demo.walkthrough"➡自由で命名
+    }
+}
+⑥app1で下記命令を実行して、ui5.yamlを更新する
+ui5 use SAPUI5@latest
+⑦webappでindex.htmlを作成する
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>lyph tile of test</title>
+    </head>
+    <body>
+        <dir>Hello Word</dir>
+    </body>
+</html>
+⑧app1でserverを機能します
+$ ui5 serve
+Server started
+URL: http://localhost:8080
+または（想定）：ui5 serve -o index.html
+⑨ブラウザを自動的に開きます
+http://localhost:8080/index.html
+****************************************************
+
+■https://sdk.openui5.org/からダウンロードした、下記の操作をする必要です
+npm install
+npm install -g @ui5/cli
+ui5 serve -o index.html
+
