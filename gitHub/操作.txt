@@ -13,11 +13,6 @@ git config --global user.email "lin@example.com"
 ・gitにプロジェクトを追加する
 git add git_lyph_public/
 
-git clone https://github.com/254693836/git_lyph_public.git
-
-
-
-
 
 ■ 1. 状態確認
 現在の状態を見る
