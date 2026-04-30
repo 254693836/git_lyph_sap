@@ -1,0 +1,99 @@
+■ 1. RAPの全体コンセプト
+RAPはSAP S/4HANAやSAP BTP上でFioriアプリ・OData APIを開発するための標準開発モデルです。
+主な目的：
+ABAPでクラウド対応開発を統一
+Fiori / OData APIを標準化
+ビジネスロジックを段階分離
+
+■ 2. RAPの基本構成（超重要）
+RAPは大きく3層です：
+① Data Model（データ層）
+CDS View Entity
+Interface View（I_）
+Root View Entity
+👉 データ構造定義
+② Behavior（振る舞い層）
+Behavior Definition（BDEF）
+Behavior Implementation（ABAPクラス）
+👉 CRUD・ロジック・制御を定義
+③ Service（公開層）
+Service Definition
+Service Binding（OData V2 / V4）
+👉 外部公開（Fiori/API）
+
+■ 3. RAPの主要オブジェクト一覧
+● CDS関連
+Root View Entity（ルート）
+Projection View（UI/API用）
+Interface View（内部構造）
+Association（関連）
+Composition（親子関係）
+● Behavior Definition（BDEF）
+主な定義内容：
+CRUD操作（create / update / delete）
+Action（ボタン処理）
+Determination（自動計算）
+Validation（チェック）
+Draft（下書き）
+● Behavior Implementation
+ABAPクラスで実装
+SAVE / MODIFY / DELETEロジック
+EML操作（Entity Manipulation Language）
+● Service層
+Service Definition（公開対象定義）
+Service Binding（OData生成）
+
+■ 4. RAPの重要概念
+● Managed / Unmanaged
+Managed：SAPが標準処理を自動生成（簡単）
+Unmanaged：全部自分で実装（自由度高い）
+● Draft（下書き）
+途中保存可能
+Fioriで必須レベルの機能
+SAVE前の一時データ管理
+● Action / Determination / Validation
+Action：ユーザ操作（例：承認ボタン）
+Determination：自動計算（例：金額合計）
+Validation：チェック（例：必須項目）
+● EML（重要）
+Entity Manipulation Language
+ABAPからRAPデータを操作する言語
+READ / MODIFY / CREATE / DELETE
+
+■ 5. ODataとの関係
+RAPは標準でOData V4生成
+Fiori Elementsと完全連携
+UIコード不要でもアプリ作成可能
+
+■ 6. Fioriとの関係
+RAP + Fiori Elements = 標準構成
+List Report / Object Page
+アノテーション駆動UI
+
+■ 7. 開発フロー（実務順）
+CDS View作成
+Behavior Definition作成
+Behavior Implementation実装
+Service Definition作成
+Service Binding公開
+Fioriで利用
+■ 8. よく使う技術要素まとめ
+CDS View（必須）
+RAP Behavior（核心）
+Draft（業務アプリ必須）
+EML（ABAP操作）
+OData V4（通信）
+Fiori Elements（UI）
+■ 9. RAPでよく出る設計パターン
+ヘッダ明細構造（Header/Item）
+Draft対応CRUD
+承認ワークフロー連携
+外部API連携（Action）
+バッチ更新（Unmanaged）
+
+■ 10. 旧技術との違い
+BOPF → RAPに置き換え
+SEGW（OData）→ RAPに統合
+GUIベース開発 → CDS中心
+
+
