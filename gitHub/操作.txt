@@ -1,0 +1,106 @@
+
+・gitのインストールを確認する
+git --version
+
+・publicのプロジェクトをダウンロードする
+git clone https://github.com/user/project.git
+
+
+■登録する方法
+git config --global user.name "Lin"
+git config --global user.email "lin@example.com"
+
+・gitにプロジェクトを追加する
+git add git_lyph_public/
+
+git clone https://github.com/254693836/git_lyph_public.git
+
+
+
+
+
+■ 1. 状態確認
+現在の状態を見る
+git status
+意味：
+変更したファイル
+add済み
+commit待ち
+push必要
+■ 2. 変更内容確認
+何を修正したか確認
+git diff
+add後を見る：
+git diff --staged
+■ 3. ファイル追加（ステージ）
+変更をコミット対象にする
+git add ファイル名
+全部追加
+git add .
+■ 4. コミット
+履歴に保存
+git commit -m "修正内容"
+例
+git commit -m "login画面修正"
+■ 5. リモート送信
+GitHubへ送る
+git push
+初回：
+git push -u origin main
+GitHub に反映されます。
+■ 6. 最新取得
+他人の変更を取得
+git pull
+■ 7. クローン
+最初に取得
+git clone URL
+例
+git clone https://github.com/user/project.git
+■ 8. ブランチ確認
+現在のブランチを見る
+git branch
+■ 9. ブランチ作成
+新しい作業用
+
+git checkout -b feature01
+
+新しい書き方
+
+git switch -c feature01
+■ 10. ブランチ切替
+git switch main
+または
+git checkout main
+■ 11. 変更取り消し
+未addなら
+git restore ファイル名
+全部戻す
+git restore .
+■ 12. add取り消し
+git restore --staged ファイル名
+■ 13. 履歴確認
+git log
+短く見る
+git log --oneline
+■ 実務で一番使う4つ（重要）
+特によく使うのはこれです。
+
+git status
+git add .
+git commit -m "message"
+git push
+■ 作業の流れ
+git status
+git add .
+git commit -m "修正"
+git push
+■ 覚え方
+状態を見る
+git status
+登録する
+git add .
+保存する
+git commit -m "内容"
+送る
+
+
