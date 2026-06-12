@@ -129,3 +129,5 @@ git push
 | ファイル削除    | `git rm ファイル名`            | Git管理対象から削除      |
 | コミット取り消し  | `git reset --soft HEAD~1` | コミットのみ取り消し       |
 | 強制的に戻す    | `git reset --hard HEAD~1` | コミットと変更を削除       |
+
+xxxx
