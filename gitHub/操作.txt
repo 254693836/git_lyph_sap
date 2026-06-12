@@ -14,7 +14,7 @@ git config --global user.email "lin@example.com"
 git add git_lyph_public/
 
 
-■ 1. 状態確認
+■ 1. 状態確認 
 現在の状態を見る
 git status
 意味：
