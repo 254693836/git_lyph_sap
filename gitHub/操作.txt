@@ -99,3 +99,33 @@ git commit -m "内容"
 送る
 
 
+git status
+git pull
+git add .
+git commit -m "コメント"
+git push
+
+
+
+| 操作        | コマンド                      | 説明               |
+| --------- | ------------------------- | ---------------- |
+| 状態確認      | `git status`              | 変更されたファイルを確認     |
+| リポジトリ取得   | `git clone URL`           | GitHubなどからソースを取得 |
+| ファイル追加    | `git add ファイル名`           | 指定ファイルをステージング    |
+| 全ファイル追加   | `git add .`               | 変更ファイルをすべてステージング |
+| コミット      | `git commit -m "コメント"`    | 変更内容を記録          |
+| プッシュ      | `git push`                | GitHubへ送信        |
+| 最新取得      | `git pull`                | GitHubから取得してマージ  |
+| 取得のみ      | `git fetch`               | GitHubから取得のみ     |
+| 履歴確認      | `git log`                 | コミット履歴表示         |
+| 簡易履歴      | `git log --oneline`       | 1行で履歴表示          |
+| 差分確認      | `git diff`                | 変更内容を確認          |
+| ブランチ確認    | `git branch`              | ブランチ一覧表示         |
+| ブランチ作成    | `git branch test`         | testブランチ作成       |
+| ブランチ切替    | `git switch test`         | testブランチへ切替      |
+| ブランチ作成＋切替 | `git switch -c test`      | 作成して切替           |
+| マージ       | `git merge test`          | testブランチをマージ     |
+| リモート確認    | `git remote -v`           | GitHub接続先確認      |
+| ファイル削除    | `git rm ファイル名`            | Git管理対象から削除      |
+| コミット取り消し  | `git reset --soft HEAD~1` | コミットのみ取り消し       |
+| 強制的に戻す    | `git reset --hard HEAD~1` | コミットと変更を削除       |
