@@ -1,0 +1,289 @@
+S/4HANA On-Premise：外部システム向けAPI・インターフェース提供方式
+
+
+方式        	外部から見えるもの	主な開発手段        	代表的なT-code
+RAP         	OData V4/V2       	ADT/Eclipse         	/IWFND/V4_ADMIN
+SAP Gateway 	OData V2          	SEGW                	SEGW, /IWFND/MAINT_SERVICE
+SOAP        	SOAP/XML          	Web Service         	SOAMANAGER, SICF
+RFC / BAPI  	RFC               	Function Module/BAPI	SE37, BAPI, SM59
+IDoc        	IDoc              	ALE/IDoc            	WE20, WE21, WE02
+独自HTTP/REST	HTTP + JSON等     	HTTP Service/Handler	SICF
+
+
+1. RAP → OData V4 Web API
+
+構成
+
+外部システム │ │ HTTPS │ OData V4 / JSON ▼ ┌─────────────────────┐ │ RAP
+Web API │ │ Service Binding │ ├─────────────────────┤ │ Service
+Definition │ ├─────────────────────┤ │ CDS / Behavior │
+├─────────────────────┤ │ ABAP Logic │ └─────────────────────┘ │ ▼
+S/4HANA
+
+概要
+
+RAP（RESTful Application Programming Model）を使用して、
+S/4HANAのデータや業務処理をOData
+APIとして外部システムへ公開する方式です。
+
+主な構成： 
+- CDS View Entity 
+- Behavior Definition 
+- Behavior Implementation 
+- Service Definition 
+- Service Binding - OData V4 / V2
+
+開発は主にEclipse / ADTで行います。
+
+関連ツール・T-code
+
+-   Eclipse / ADT ：RAP開発
+-   /IWFND/V4_ADMIN ：OData V4 Service Group管理
+-   /IWBEP/V4_ADMIN ：Backend側OData V4管理
+
+============================================================
+
+2. SAP Gateway → OData V2
+
+構成
+
+外部システム │ │ HTTPS │ OData V2 / JSON ▼ ┌─────────────────────┐ │ SAP
+Gateway │ │ OData Service │ ├─────────────────────┤ │ MPC / DPC │ │
+MPC_EXT / DPC_EXT │ ├─────────────────────┤ │ ABAP Logic │
+├─────────────────────┤ │ BAPI / FM / DB │ └─────────────────────┘ │ ▼
+S/4HANA
+
+概要
+従来型のSAP Gatewayを利用してOData V2 APIを提供する方式です。
+
+例： GET /sap/opu/odata/sap/ZCUSTOMER_SRV/CustomerSet POST
+/sap/opu/odata/sap/ZCUSTOMER_SRV/CustomerSet
+
+RAP以前から広く利用されている方式で、既存S/4HANAシステムでは
+現在も多く利用されています。
+
+関連T-code
+
+-   SEGW ：OData Service Project作成
+-   /IWFND/MAINT_SERVICE ：OData V2 Service登録・有効化
+-   /IWFND/GW_CLIENT ：OData APIテスト
+-   /IWFND/ERROR_LOG ：Gatewayエラー確認
+-   SICF ：HTTP/ICF Service確認
+
+============================================================
+
+3. SOAP Web Service
+
+構成
+
+外部システム │ │ HTTPS │ SOAP / XML ▼ ┌─────────────────────┐ │ SOAP
+Endpoint │ │ Service Binding │ ├─────────────────────┤ │ Service
+Definition │ ├─────────────────────┤ │ ABAP Implementation │
+└─────────────────────┘ │ ▼ S/4HANA
+
+概要
+
+SOAP/XMLを使用してSAPと外部システムを連携する方式です。
+
+通常、SAP側からWSDLを提供し、JavaやC#などの外部システムが
+WSDLをもとにSOAP Requestを送信します。
+
+SAP │ ├─ WSDL │ ▼ 外部Java/C#システム │ │ SOAP Request（XML） ▼ SAP SOAP
+Endpoint
+
+関連T-code
+
+-   SOAMANAGER ：SOAP Service、Binding、Endpoint、WSDL設定
+-   SICF ：SOAP用HTTP Service確認
+-   SE80 ：ABAP Repository Object確認
+-   SE37 ：Function Module確認・テスト
+
+============================================================
+
+4. RFC / BAPI
+
+構成
+
+外部システム │ │ SAP RFC Protocol │ JCo / NCoなど ▼
+┌─────────────────────┐ │ RFC Interface │ ├─────────────────────┤ │
+RFC-enabled FM │ │ または BAPI │ ├─────────────────────┤ │ ABAP Logic │
+└─────────────────────┘ │ ▼ S/4HANA
+
+概要
+
+RFC-enabled Function ModuleまたはBAPIを外部システムから
+呼び出す方式です。
+
+Javaの場合はSAP Java Connector（JCo）、 .NETの場合はSAP .NET
+Connector（NCo）などを利用できます。
+
+例：
+
+Java ↓ SAP Java Connector（JCo） ↓ RFC ↓ Z_GET_CUSTOMER / BAPI ↓ S/4HANA
+
+注意： 外部システム → SAPのRFC Functionを呼ぶだけの場合、
+必ずしもSAP側でSM59 Destinationを作成するわけではありません。
+SM59は主にSAP側から別システムへ接続するDestination管理に利用します。
+
+関連T-code
+
+-   SE37 ：Function Module作成・テスト
+-   BAPI ：BAPI Explorer
+-   SM59 ：RFC Destination管理
+-   SM58 ：tRFCエラー・未処理確認
+-   ST22 ：ABAP Dump確認
+
+============================================================
+
+5. IDoc
+
+構成
+
+外部システム │ │ IDoc ▼ ┌─────────────────────┐ │ Partner Profile │ │
+WE20 │ ├─────────────────────┤ │ Port │ │ WE21 │ ├─────────────────────┤
+│ IDoc │ │ MATMAS / ORDERS … │ ├─────────────────────┤ │ Process Code /
+FM │ └─────────────────────┘ │ ▼ S/4HANA
+
+逆方向：
+
+S/4HANA │ │ IDoc ▼ Middleware │ ▼ 外部システム
+
+概要
+
+IDocはREST APIのような同期型の 「Request →
+Response」よりも、非同期のシステム連携に向いています。
+
+大量のマスタデータ、受注、購買などのシステム間連携で
+長く利用されている方式です。
+
+関連T-code
+
+-   WE20 ：Partner Profile
+-   WE21 ：Port
+-   WE02 ：IDoc確認
+-   WE05 ：IDoc一覧
+-   WE19 ：IDocテスト
+-   WE30 ：IDoc Basic Type
+-   WE31 ：Segment
+-   WE60 ：IDoc Documentation
+-   BD64 ：Distribution Model
+-   BD87 ：エラーIDoc再処理
+-   SM58 ：tRFC確認
+-   SM59 ：RFC Destination
+
+============================================================
+
+6. 独自HTTP / REST API
+
+構成
+
+外部システム │ │ HTTPS │ JSON ▼ ┌─────────────────────┐ │ HTTP Service │
+│ /sap/bc/… │ ├─────────────────────┤ │ HTTP Handler Class │
+├─────────────────────┤ │ ABAP Logic │ ├─────────────────────┤ │ BAPI /
+FM / DB │ └─────────────────────┘ │ ▼ S/4HANA
+
+概要
+
+RAPやSAP Gatewayを利用せず、ABAPで独自HTTP Endpointを 作成する方式です。
+
+例：
+
+POST /sap/bc/zapi/order Content-Type: application/json
+
+{ “customer”: “1000001”, “material”: “MAT001”, “quantity”: 10 }
+
+SAP側では概ね以下の処理を実装します。
+
+JSON ↓ ABAP HTTP Handler ↓ JSON Deserialize ↓ 業務処理 ↓ JSON Response
+
+自由度は高いですが、URL設計、JSON変換、エラー形式、 HTTP
+Status、認証、バージョン管理などを自分で設計する部分が増えます。
+
+関連ツール・T-code
+
+-   SICF ：HTTP Serviceの有効化・確認
+-   SE24 ：Handler Class確認・開発（Classic ABAP）
+-   SE80 ：Repository Object確認
+-   Eclipse/ADT ：新しいHTTP Service Object開発
+
+============================================================
+
+7. 全体構成
+
+                    外部システム
+                         │
+       ┌─────────┬───────┼────────┬─────────┐
+       │         │       │        │         │
+    OData     OData    SOAP      RFC      IDoc
+      V4        V2      XML       │         │
+       │         │       │        │         │
+       ▼         ▼       ▼        ▼         ▼
+     RAP       SEGW  SOAMANAGER  SE37      WE20
+       │         │       │        │         │
+
+Service Gateway SOAP BAPI/FM IDoc Binding Runtime Runtime │ Runtime │ │
+│ │ │ └─────────┴───────┴────────┴─────────┘ │ ▼ ABAP業務ロジック │ BAPI
+/ Class │ ▼ S/4HANA
+
+============================================================
+
+8. 主な方式とT-codeの対応
+
+1.  RAP
+    -   開発：Eclipse / ADT
+    -   OData V4管理：/IWFND/V4_ADMIN
+    -   Backend V4管理：/IWBEP/V4_ADMIN
+2.  SAP Gateway OData V2
+    -   SEGW
+    -   /IWFND/MAINT_SERVICE
+    -   /IWFND/GW_CLIENT
+    -   /IWFND/ERROR_LOG
+    -   SICF
+3.  SOAP
+    -   SOAMANAGER
+    -   SICF
+    -   SE80
+    -   SE37
+4.  RFC / BAPI
+    -   SE37
+    -   BAPI
+    -   SM59
+    -   SM58
+    -   ST22
+5.  IDoc
+    -   WE20
+    -   WE21
+    -   WE02
+    -   WE05
+    -   WE19
+    -   WE30
+    -   WE31
+    -   WE60
+    -   BD64
+    -   BD87
+    -   SM58
+    -   SM59
+6.  独自HTTP / REST
+    -   Eclipse / ADT
+    -   SICF
+    -   SE24
+    -   SE80
+
+============================================================
+
+9. 用途の簡単な整理
+
+RAP → 新しいABAP開発モデルでOData APIを提供する場合
+
+SAP Gateway OData V2 → 既存のS/4HANA環境でOData APIを提供する場合
+
+SOAP → SOAP/XMLベースの企業間・既存システム連携
+
+RFC / BAPI → SAPのFunction Moduleや標準BAPIを直接利用する場合
+
+IDoc → 非同期・大量データ・メッセージ連携
+
+独自HTTP / REST → 標準方式では対応しにくい特殊なHTTP/JSON APIを作る場合
+
+※ S/4HANA On-Premiseのバージョンによって、RAP、OData V4、 HTTP
+Serviceなどで利用できる機能は異なります。
