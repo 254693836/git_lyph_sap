@@ -154,3 +154,43 @@ taskkill /PID 12345 /F
 結果：
 成功: PID 26708 のプロセスは強制終了されました。
 ********************************************************
+
+
+################ 20260925で追加する start  node_modules が親で実行できます ###############################
+■①：親フォルダで
+npm init -y
+※package.jsonを作成する
+
+■②：fiori generatorで 子供プロジェクトを追加する
+※node_modules が自動的に作成された
+
+■③：・①で作成したpackage.jsonに下記のような②で作成したプロジェクト名を追加する
+  "workspaces": [
+    "travelunmanaged"
+  ],
+  "overrides": {
+    "ajv@^8": "8.20.0"
+  },
+・②で子フォルダのnode_modulesを削除する
+
+■④子フォルダに下記実行する
+npm install
+npm dedupe
+npm run start --workspace=travelunmanaged
+
+
+
+■下記は全て状況確認命令です
+npm ls @sap/ux-ui5-tooling @ui5/cli @ui5/project --workspace=travelunmanaged
+
+親フォルダ：ajvのバージョンを確認する
+npm ls ajv ajv-errors --workspace=travelunmanaged
+
+子フォルダ：ajvのバージョンを確認する
+npm ls ajv ajv-errors --workspace=travelunmanaged
+
+
+################ 20260925で追加する end ###############################
+
+
+
