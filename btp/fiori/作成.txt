@@ -205,3 +205,97 @@ npm run deploy
 ★成功しない、失敗した
 
 **********************************************************************
+
+*******************************bus で作業、start　➡ html5 Application へ　deploy 手順***************************************
+
+■cf login --sso
+上記の実行の引数：BTP コックピットのtralアカウントにあります
+    API endpoint:https://api.cf.us10-001.hana.ondemand.com
+    次のterminalのulrをクリックして、passcodeを作成する、下記のようです
+    passcode：TS2s_ne43kfGymaybcmziHuKjR4YAg12
+
+■sap cockpitで　conectivtiを追加します
+　　追加情報（cloud abap enverment のserice key を参照して記入する）
+　　　・名前：任意
+　　　・認証：OAuth2UserTokenExchange
+　　　・クライアント ID："uaa"の中url + "/oauth/token"
+　　　・URL：一番外のURL
+　　　・認証：OAuth2UserTokenExchange
+　　  ・追加プロパティ
+        キー:HTML5.DynamicDestination 値:true
+        キー:WebIDEEnabled 値:true
+        キー:WebIDEUsage 値:odata_abap,dev_abap,abap_cloud
+
+
+■ctrl + shift + p
+➡Fiori: Add Deployment Configuration
+  上記作成したのconectを設定する
+
+
+■mta.yaml を右クリックして、Build MTA Project を選んでください
+ mta_archivesのフォルダを作成します
+ 中にプロジェクト名_0.0.1.mtarが作成されます
+
+■mta archives の中の mtar ファイルを右クリックして、Deploy MTA Archive を選んでください
+
+下記は btp cockpitでやります
+■SAP Build Work Zone, standard editionの作成
+・html5 application で - SAP Build Work Zone, standard edition のサブスクライブ のリンクをクリックして
+・market に遷移して、　SAP Build Work Zone, standard editionの作成
+   ・サービス:SAP Build Work Zone, standard edition
+   ・計画:サブスクライブ  のstandard
+
+■上記がエラー場合、トラスト設定を設定する　trialのトラスト設定(Trust Configuration)
+　　・establish trustで処理します
+　　・対象がないなら、下記の処理する
+
+
+■Cloud Identity Services　上記がらえーなら、ここで作成する
+  Service:Cloud Identity Services
+  Plan:instanse application
+  Runtime Environment:Cloud Foundry
+  Space:dev
+  Instance Name:任意、insNameChild
+
+
+*******************************bus で作業、end***************************************
+
+
+*******************************bus で作業、start　➡　cloud abap Environment へ　deploy 手順***************************************
+
+■sap cockpitで　conectivtiを追加します
+　　追加情報（cloud abap enverment のserice key を参照して記入する）
+　　　・名前：任意
+　　　・認証：OAuth2UserTokenExchange
+　　　・クライアント ID："uaa"の中url + "/oauth/token"
+　　　・URL：一番外のURL
+　　　・認証：OAuth2UserTokenExchange
+　　  ・追加プロパティ
+        キー:HTML5.DynamicDestination 値:true
+        キー:WebIDEEnabled 値:true
+        キー:WebIDEUsage 値:odata_abap,dev_abap,abap_cloud
+
+■ctrl + shift + p
+➡Fiori: Add Deployment Configuration
+  
+ Please choose the target.* :　ABAP
+ Destination*:上記作成したのconectを設定する（btp cockpitで）
+ SAPUI5 ABAP Repository*:自由に、例：ZTRAVELAPP_UI
+ Deployment Description:自由に、記入しないOK
+ Select How You Want to Enter the Package*:enter manually
+ Package*: 例： ZLYZ_RAP_FIORI
+ ※1 Select How You Want to Enter the Transport Request*:enter manually
+ Transport Request*: 子供のtransport
+
+※1の前提
+ eclipseで：ZLYZ_RAP_UNMANAGED の下にある Retrieve unreleased transports から Transport を作ってから選びます。
+ transport organizerで　選択プロジェクトを新しいtruanportを作成する
+ 　　request type:workbench
+     short description:自由に、例：Deploy ZTRAVELAPP UI
+
+　・ui5-deploy.yamlを作成されました
+
+■稼働中のサーバを探すBAS のターミナルで npm run deploy を実行します
+
+
+*******************************bus で作業、end　➡　cloud abap Environment へ　deploy 手順***************************************
