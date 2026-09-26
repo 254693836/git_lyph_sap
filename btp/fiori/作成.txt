@@ -174,3 +174,34 @@ npm ls ajv ajv-errors --workspace=travelunmanaged
 
 
 
+********************************　➡ Cloud Foundry html5に deployする*********************************************
+
+■ctrl + shift + p
+➡Fiori: Add Deployment Configuration
+入力内容：
+・cloud fundry
+エラーなら、提示したコメントを実行する、↓のファイルを作成すること
+mta.yaml
+
+■ npm run build
+
+■ cf login --sso
+※できない場合、Cloud Foundry CLI の Windows インストー必要です
+※install path : https://github.com/cloudfoundry/cli/wiki/V8-CLI-Installation-Guide
+
+上記の実行の引数：BTP コックピットのtralアカウントにあります
+    API endpoint:https://api.cf.us10-001.hana.ondemand.com
+    次のterminalのulrをクリックして、passcodeを作成する、下記のようです
+    passcode：hID-GdKTm451eJy2ummIrsaAHF-Tlb3g
+
+■npm run deploy
+エラーなら、下記のpluginをinstallします
+cf install-plugin -r CF-Community multiapps
+npm run deploy
+再度エラー、下記を実行
+mbt build --mtar archive
+npm run deploy
+
+★成功しない、失敗した
+
+**********************************************************************
