@@ -131,3 +131,6 @@ git push
 | 強制的に戻す    | `git reset --hard HEAD~1` | コミットと変更を削除       |
 
 xxxx
+
+
+git sparse-checkout set <子フォルダ名>

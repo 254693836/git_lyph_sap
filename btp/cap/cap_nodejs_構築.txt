@@ -1,0 +1,73 @@
+***************************************
+Windows PC
+│
+├─ VS Code
+├─ Node.js
+├─ npm
+├─ @sap/cds
+└─ SQLite
+      ↓
+CAP Backend
+http://localhost:4004
+****************CAPサーバーが立ち上がり***********************
+npm install -g @sap/cds-dk
+
+cds init my-cap-app --nodejs
+
+cd my-cap-app
+
+cds watch
+
+*****************プロジェクト構成**********************
+my-cap-app/
+│
+├─ app/          ← FioriなどFrontend
+│
+├─ db/           ← DB定義
+│   └─ schema.cds
+│
+├─ srv/          ← Backend API
+│   ├─ service.cds
+│   └─ service.js
+│
+├─ package.json
+│
+└─ node_modules/
+
+***************************************
+
+****************basで動きます***********************
+■フォルダを作成する
+cds init cap_nodejs
+
+・pwd ➡pathの確認命令
+・ls ➡dirと同じです （linux）
+
+■自分作ったfloderを開く
+・pwd で確認
+
+■cds add tiny-sample 
+学習用sampleを作ります
+
+■find db -max depth2 -type f ➡エラー
+find db -type f  ➡ok
+
+■cds watch
+
+■dbにuser.cds
+schema.cds
+****************
+namespace my.bookshop;
+entity Books {
+  key ID  : Integer;
+  title   : String;
+  author  : String;
+
+}
+*****************
+
+
+lsof -i➡実行中のport
+kill pid➡このportを閉じる
+
+cds compile srv　➡　定義したことを確認
