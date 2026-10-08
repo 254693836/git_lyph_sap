@@ -10,6 +10,25 @@ Header 側に定義した validation は、その更新を契機に Draft の Pr
 Validation を Child の behavior implementation から直接呼び出すことはしない。
 RAP の validation は BDEF に登録し、RAP の save sequence から実行させる。
 
+**********************************************************************
+■ 方針：Header の値を修正して Header validation をトリガーする
+**********************************************************************
+Child の追加・修正・削除を受けた determination で、Header の値を更新する。
+例えば TotalAmount、ItemCount、Status のように業務上意味のある項目を
+Child の最新状態から再計算して UPDATE する。
+
+Header に対する UPDATE が発生すると、Header は変更済みエンティティになる。
+その結果、Header に定義した validation validate_header on save { update; }
+が Prepare／Save の処理対象となり、Header と Child をまたぐ整合性チェックを
+実行できる。
+
+例：Child の金額を修正
+    → Child の determination が TotalAmount を再計算して Header を UPDATE
+    → Header validation が TotalAmount と全 Child を検証
+    → エラーなら Fiori elements にメッセージを表示し、有効化を停止
+
+**********************************************************************
+
 ■ なぜ Header を更新する必要があるか
 Header の validation が on save { update; } だけの場合、Fiori elements で
 Child だけを追加・変更・削除しても Header 自体が変更されていなければ、
