@@ -1,0 +1,26 @@
+define behavior for ZI_Header alias Header
+{
+  create;
+  update;
+  delete;
+
+  association _Child { create; with draft; }
+
+  validation validateHeader on save
+    { create; update; }
+
+  draft determine action Prepare
+  {
+    validation ( always ) validateHeader;
+  }
+}
+
+define behavior for ZI_Child alias Child
+{
+  update;
+  delete;
+
+  association _Header { with draft; }
+
+  " Headerと同じValidationは定義しない
+}
