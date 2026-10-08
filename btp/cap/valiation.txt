@@ -1,0 +1,167 @@
+RAP Draft + Fiori elements
+Object Page の明細変更時に Header の Validation を実行する
+
+■ 結論
+明細（Child）の create / update / delete で Header の項目を更新し、
+Header を「変更あり」の状態にする。
+Header 側に定義した validation は、その更新を契機に Draft の Prepare
+（有効化前）および Save 時に実行される。
+
+Validation を Child の behavior implementation から直接呼び出すことはしない。
+RAP の validation は BDEF に登録し、RAP の save sequence から実行させる。
+
+■ なぜ Header を更新する必要があるか
+Header の validation が on save { update; } だけの場合、Fiori elements で
+Child だけを追加・変更・削除しても Header 自体が変更されていなければ、
+Header validation の実行対象にならないことがある。
+
+そのため Child の変更後に Header の業務項目を再計算して更新する。
+例：合計金額（TotalAmount）、明細件数（ItemCount）、ステータスなど。
+業務上意味のないダミー項目を作るのではなく、可能なら再計算結果を更新する。
+
+■ 実装パターン（推奨）
+1. Header に再計算対象の項目を持たせる
+   例：TotalAmount、ItemCount、ValidationVersion
+
+2. Child の determination を on modify に定義する
+   create / update / delete の全てを対象にする。
+
+3. determination で Child を読み、Header の合計・件数などを再計算する
+
+4. EML で Header の再計算項目を UPDATE する
+   Header が変更扱いとなるため、Header の validation が実行対象になる。
+
+5. Header に validation を定義する
+   Header と Child を読み、親子をまたぐ業務チェックを Header 側へ集約する。
+
+6. Draft の Prepare action に Header validation を登録する
+   Fiori elements の編集フローで、有効化前に validation が実行される。
+
+■ Behavior Definition の例（概念）
+managed implementation in class zbp_i_order unique;
+strict ( 2 );
+with draft;
+
+define behavior for ZI_ORDER alias Header
+persistent table zt_order
+draft table zt_order_d
+lock master
+total etag LastChangedAt
+{
+  create;
+  update;
+  delete;
+
+  association _Item { create; with draft; }
+
+  " Child の変更により更新される項目。UI からの直接編集は不要
+  field ( readonly ) TotalAmount, ItemCount;
+
+  validation validate_header on save { create; update; }
+
+  draft determine action Prepare
+  {
+    validation validate_header;
+  }
+}
+
+define behavior for ZI_ORDER_ITEM alias Item
+persistent table zt_order_item
+draft table zt_order_item_d
+lock dependent by _Header
+{
+  create;
+  update;
+  delete;
+  association _Header { with draft; }
+
+  determination recalculate_header on modify { create; update; delete; }
+}
+
+注意：実際の BDEF では、root / dependent、draft table、association 名および
+field 名を自プロジェクトの CDS 定義に合わせる。
+
+■ Child determination の実装例（概念）
+METHOD recalculate_header.
+  " keys から対象 Header のキーを特定する
+  " Child を読み、合計金額・件数を計算する
+
+  READ ENTITIES OF zi_order IN LOCAL MODE
+    ENTITY Header BY \_Item
+    ALL FIELDS WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_item).
+
+  DATA(lv_total) = REDUCE decfloat34(
+    INIT result = CONV decfloat34( 0 )
+    FOR ls_item IN lt_item
+    NEXT result = result + ls_item-amount ).
+
+  MODIFY ENTITIES OF zi_order IN LOCAL MODE
+    ENTITY Header
+    UPDATE FIELDS ( TotalAmount ItemCount )
+    WITH VALUE #( FOR ls_key IN keys
+                  ( %tky         = ls_key-%tky
+                    TotalAmount  = lv_total
+                    ItemCount    = lines( lt_item ) ) )
+    FAILED DATA(lt_failed)
+    REPORTED DATA(lt_reported).
+ENDMETHOD.
+
+上記は構造を示す例である。
+実装時は、複数 Header を一度に変更する場合に Header ごとに Child を集計し、
+削除時は削除対象を除いた Draft buffer の明細を基に再計算する。
+
+■ Header validation の実装例（概念）
+METHOD validate_header.
+  READ ENTITIES OF zi_order IN LOCAL MODE
+    ENTITY Header
+    ALL FIELDS WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_header).
+
+  READ ENTITIES OF zi_order IN LOCAL MODE
+    ENTITY Header BY \_Item
+    ALL FIELDS WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_item).
+
+  LOOP AT lt_header ASSIGNING FIELD-SYMBOL(<header>).
+    " Header と Child の整合性を確認する
+    " 例：明細が 1 件以上、合計額が Header 合計と一致、状態遷移が妥当
+    IF <header>-totalamount <> ... .
+      APPEND VALUE #( %tky = <header>-%tky ) TO failed-header.
+      APPEND VALUE #(
+        %tky = <header>-%tky
+        %msg = new_message(
+          id       = 'ZORDER'
+          number   = '001'
+          severity = if_abap_behv_message=>severity-error )
+        %element-TotalAmount = if_abap_behv=>mk-on ) TO reported-header.
+    ENDIF.
+  ENDLOOP.
+ENDMETHOD.
+
+failed / reported は Validation メソッドの出力として RAP に返す。
+これにより Fiori elements の Object Page に標準メッセージとして表示され、
+エラーの場合は Draft の有効化（Save）を止められる。
+
+■ Fiori elements 側
+標準の Fiori elements Object Page だけでよく、Child の create / update /
+delete のために独自 UI5 コントローラから Header validation を呼び出す必要はない。
+
+Header に再計算結果を表示する場合は、Projection behavior と Metadata Extension
+で当該項目を UI に公開する。変更直後に Header 表示を最新化したい場合は、
+side effects を定義して Header の再読込対象を指定する。
+
+■ 運用上の注意
+- Validation は主に Prepare / Save 時の整合性保証である。入力のたびに即時に
+  メッセージを出したい項目チェックは、Child 側 validation と併用する。
+- Header 更新の determination と Header validation の間で相互更新しない。
+  無限ループを避け、determination は再計算値が変わった場合だけ UPDATE する。
+- Draft と active の両方で同じロジックが動くことを確認する。
+- 削除・複数明細・複数 Header の一括変更を含めてテストする。
+
+■ 確認観点
+1. Child 追加後、Header の合計／件数が再計算される。
+2. Child 修正後、Header validation のエラーが Prepare / Save で返る。
+3. Child 削除後、明細ゼロ・合計不一致などの Header validation が返る。
+4. エラー時に Fiori elements でメッセージが表示され、有効化できない。
+5. エラーを解消して再保存すると有効化できる。
