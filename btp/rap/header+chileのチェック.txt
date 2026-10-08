@@ -24,3 +24,49 @@ define behavior for ZI_Child alias Child
 
   " Headerと同じValidationは定義しない
 }
+****************************下記はヘッダを修正する**************************************
+managed implementation in class zbp_i_header unique;
+strict ( 2 );
+with draft;
+
+define behavior for ZI_Header alias Header
+persistent table zheader
+draft table zheader_d
+lock master
+total etag LastChangedAt
+{
+  create;
+  update;
+  delete;
+
+  field ( readonly ) TotalAmount;
+
+  association _Child { create; with draft; }
+
+  validation validateHeader on save
+    { create; update; }
+
+  draft determine action Prepare {
+    validation validateHeader;
+  }
+
+  draft action Edit;
+  draft action Activate;
+  draft action Discard;
+  draft action Resume;
+}
+
+define behavior for ZI_Child alias Child
+persistent table zchild
+draft table zchild_d
+lock dependent by _Header
+{
+  update;
+  delete;
+
+  association _Header { with draft; }
+
+  determination updateHeader on modify
+    { create; update; delete; }
+}
+
