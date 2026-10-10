@@ -1,0 +1,364 @@
+CAP Java + Fiori：よく使う実装パターン
+
+対象技術
+- CAP（CDS、OData サービス、認可、トランザクション）
+- Java（CAP Java の EventHandler）
+- Fiori elements / SAPUI5（標準画面と必要最小限の拡張）
+
+======================================================================
+■ 全体の考え方
+======================================================================
+画面に業務ロジックを集めず、責務を次のように分ける。
+
+CDS             : データモデル、サービス公開、UI メタデータ
+CAP Java        : 業務ルール、DB 更新、外部連携、認可の補助
+Fiori elements  : 標準の一覧／Object Page、標準 CRUD、メッセージ表示
+UI5 拡張        : 標準機能だけで足りないボタン、画面制御、遷移
+
+基本構成例
+db/schema.cds       エンティティ定義
+srv/catalog-service.cds  OData に公開するサービス、action/function
+srv/src/main/java/...    Java EventHandler
+app/...                  Fiori elements または UI5 アプリ
+
+Java ハンドラの基本形
+@Component
+@ServiceName(CatalogService_.CDS_NAME)
+public class CatalogServiceHandler implements EventHandler {
+
+  @Before(event = CqnService.EVENT_CREATE, entity = Books_.CDS_NAME)
+  public void beforeCreate(CdsCreateEventContext context, List<Books> books) {
+    // 入力チェック、初期値設定
+  }
+
+  @On(event = CqnService.EVENT_READ, entity = Books_.CDS_NAME)
+  public Result onRead(CdsReadEventContext context) {
+    // 標準 READ を置き換える必要がある場合だけ実装する
+    return context.getService().run(context.getCqn());
+  }
+
+  @After(event = CqnService.EVENT_READ, entity = Books_.CDS_NAME)
+  public void afterRead(List<Books> books) {
+    // 表示専用項目の編集など。永続化はしない
+  }
+}
+
+原則
+- 標準 CRUD で足りる処理は Java を書かない。
+- @Before は入力検証・初期値、@On は標準処理の置換、@After は結果の加工に使う。
+- DB 更新は同一リクエストのトランザクション内で service.run(...) により実行する。
+- UI の必須チェックだけに依存せず、サーバー側でも必ず検証する。
+
+======================================================================
+■ Backend：よく使う状況別パターン
+======================================================================
+
+---------------------------------------------------------------------
+例 1：チェック処理（必須、形式、業務整合性）
+---------------------------------------------------------------------
+用途
+- 金額が 0 以上であること
+- 開始日が終了日以前であること
+- ステータス遷移が正しいこと
+- 親子の合計や明細件数が正しいこと
+
+実装場所の目安
+- 単項目チェック        : @Before CREATE / UPDATE
+- 複数項目の整合性      : @Before CREATE / UPDATE
+- 保存前の存在確認      : @Before または action ハンドラ
+- 画面上の即時入力補助  : Fiori の annotation / UI5（ただし Backend も必須）
+
+例（概念）
+@Before(event = { CqnService.EVENT_CREATE, CqnService.EVENT_UPDATE },
+        entity = Orders_.CDS_NAME)
+public void validateOrder(List<Orders> orders) {
+  for (Orders order : orders) {
+    if (order.getAmount() != null && order.getAmount().signum() < 0) {
+      throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+          "金額は 0 以上を入力してください");
+    }
+    if (order.getStartDate() != null && order.getEndDate() != null
+        && order.getStartDate().isAfter(order.getEndDate())) {
+      throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+          "開始日は終了日以前にしてください");
+    }
+  }
+}
+
+注意
+- UPDATE は送信された項目だけが入る場合がある。必要なら既存値を読み、完全な状態で判定する。
+- 1 件のエラーで止めるか、複数エラーを返すかを画面要件に合わせる。
+- メッセージは画面に表示される文言なので、業務用メッセージクラス／文言管理を使う。
+
+---------------------------------------------------------------------
+例 2：取得処理（検索、絞り込み、表示項目の追加）
+---------------------------------------------------------------------
+標準 OData READ は、通常は CAP が自動処理する。
+次の場合だけ @On READ または @After READ を使う。
+- ログインユーザーに応じて追加の絞り込みをする
+- 外部値や計算値を表示する
+- 複数エンティティの結果を特別な形に加工する
+
+@After READ の例（表示専用の計算項目）
+@After(event = CqnService.EVENT_READ, entity = Orders_.CDS_NAME)
+public void addDisplayValue(List<Orders> orders) {
+  for (Orders order : orders) {
+    order.setStatusText(toStatusText(order.getStatus()));
+  }
+}
+
+検索の原則
+- $filter、$select、$orderby、$top、$skip は標準 OData を優先する。
+- 大量データを Java に全件読み込みしてから絞り込まない。
+- @restrict と CDS の権限制御を先に定義し、Java の条件追加は補助にする。
+- 表示専用の計算値は CDS の calculated field / projection で表現できないかも確認する。
+
+---------------------------------------------------------------------
+例 3：DB 更新処理（CRUD、登録、承認、親子一括更新）
+---------------------------------------------------------------------
+単純な CREATE / UPDATE / DELETE は標準 CRUD を使用する。
+複数テーブルを業務単位で更新する場合は action を定義する。
+
+srv/catalog-service.cds の例
+service CatalogService {
+  entity Orders as projection on my.Orders;
+  action approveOrder(ID : UUID) returns Orders;
+}
+
+Java action の例（概念）
+@On(event = "approveOrder")
+public void approveOrder(ApproveOrderContext context) {
+  String id = context.getId();
+
+  Orders order = db.run(Select.from(Orders_.class).byId(id))
+                   .single(Orders.class);
+  validateBeforeApprove(order);
+
+  db.run(Update.entity(Orders_.class)
+      .data(Orders.STATUS, "APPROVED")
+      .where(o -> o.ID().eq(id)));
+
+  Orders result = db.run(Select.from(Orders_.class).byId(id))
+                    .single(Orders.class);
+  context.setResult(result);
+}
+
+注意
+- action 内の複数更新は同じリクエスト・トランザクションで行う。
+- 更新前に対象を再読込し、認可・ステータス・楽観ロックを確認する。
+- 業務エラーは例外で返し、技術例外のスタックトレースを画面へ出さない。
+- 更新件数が 0 件なら、削除済み／権限なし／競合を切り分ける。
+
+---------------------------------------------------------------------
+例 4：外部システム呼び出し（REST、S/4、BTP Destination）
+---------------------------------------------------------------------
+用途
+- 得意先／品目などのマスタ照会
+- 外部サービスへの登録依頼
+- ワークフロー、メール、帳票、通知の起動
+
+推奨方針
+1. 接続先 URL や認証情報をソースコードに書かない。
+2. BTP Destination / XSUAA / サービスバインディングを利用する。
+3. timeout、リトライ可否、相関 ID、エラー変換を設計する。
+4. 外部更新を伴う場合は冪等性キーを持つ。
+
+処理の分け方
+- 同期で結果が必須       : action から呼び、失敗を業務エラーとして返す
+- 時間がかかる／再実行可 : Outbox / Job / Messaging に登録して非同期化する
+- 参照のみ               : READ 後の補完より、専用 action/function を検討する
+
+注意
+- DB コミット後にだけ外部呼出しを行う必要がある場合がある。
+- 外部更新とローカル DB は分散トランザクションにしない。失敗時の再送・補償を設計する。
+- HTTP エラーをそのまま画面へ返さず、利用者向けメッセージへ変換する。
+- 個人情報・トークンをログへ出力しない。
+
+---------------------------------------------------------------------
+例 5：ソート、一覧の制御、検索条件
+---------------------------------------------------------------------
+基本は Fiori elements / OData に任せる。
+- ソート可能項目       : CDS annotation で制御する
+- 初期ソート           : UI annotation の PresentationVariant を利用する
+- フィルタ項目         : SelectionFields を利用する
+- 表示列               : LineItem を利用する
+- ユーザー固有の初期値 : UI5 extension または backend のデフォルト処理を検討する
+
+例（annotation の概念）
+annotate CatalogService.Orders with @(
+  UI.SelectionFields: [status, createdAt],
+  UI.LineItem: [
+    { $Type: 'UI.DataField', Value: ID },
+    { $Type: 'UI.DataField', Value: status },
+    { $Type: 'UI.DataField', Value: amount }
+  ],
+  UI.PresentationVariant: {
+    SortOrder: [ { Property: createdAt, Descending: true } ]
+  }
+);
+
+---------------------------------------------------------------------
+例 6：認可・データアクセス制御
+---------------------------------------------------------------------
+CDS サービスに @requires / @restrict を定義し、ロール単位で制御する。
+@restrict: [
+  { grant: 'READ', to: 'Viewer' },
+  { grant: ['CREATE', 'UPDATE'], to: 'Editor' },
+  { grant: '*', to: 'Admin' }
+]
+
+Java で追加チェックが必要な例
+- 担当組織・本人のデータだけ更新可能
+- ステータスが特定状態のときだけ承認可能
+- action ごとの細かい実行条件
+
+---------------------------------------------------------------------
+例 7：採番、初期値、監査情報
+---------------------------------------------------------------------
+@Before CREATE で行う代表例
+- 業務キーの採番
+- 初期ステータスの設定（例：NEW）
+- 登録者・登録日時、更新者・更新日時
+- ログインユーザーの部署・会社コードを初期設定
+
+ただし、createdAt / createdBy / modifiedAt / modifiedBy は CAP の共通要素
+managed を使える場合がある。手作業で重複実装しない。
+
+---------------------------------------------------------------------
+例 8：ファイル添付、ダウンロード、帳票
+---------------------------------------------------------------------
+- ファイル本体は BLOB、Object Store、Document Management などを用途で選ぶ。
+- ファイル名、MIME type、サイズ、登録者、ウイルススキャン結果を管理する。
+- ダウンロード権限は親エンティティの権限と同じ基準で確認する。
+- 大容量ファイルを OData の通常一覧に含めない。
+
+======================================================================
+■ Frontend：Fiori elements / UI5 のよく使うパターン
+======================================================================
+
+---------------------------------------------------------------------
+例 1：拡張ボタン（Custom Action）
+---------------------------------------------------------------------
+最初に判断すること
+- 業務処理なら、CAP service に action を定義する。
+- Fiori elements の標準 action 表示で足りるなら UI5 コードを書かない。
+- 確認ダイアログ、ファイル選択、複数選択など UI 固有処理だけを extension にする。
+
+代表例
+- 承認／差戻し／取消
+- PDF 出力
+- 外部システム照会
+- 明細の一括追加
+
+ボタン押下後の基本
+1. 選択コンテキストを取得する
+2. action を呼ぶ
+3. 成功／失敗メッセージを表示する
+4. 必要な binding を refresh する
+
+---------------------------------------------------------------------
+例 2：拡張入力項目
+---------------------------------------------------------------------
+優先順位
+1. CDS に項目を追加し、Metadata Extension で標準 Object Page に配置する
+2. Value Help、必須、読み取り専用、表示／非表示を annotation で定義する
+3. annotation で実現できない場合だけ Custom Section / Fragment を追加する
+
+入力項目の例
+- 追加の業務コメント
+- 条件付きで表示する理由コード
+- 外部検索用の補助入力
+
+注意
+- 永続化する項目は OData モデルへ正しくバインドする。
+- UI の入力チェックは補助であり、Backend validation を省略しない。
+- 任意の UI state を DB に保存する必要があるかを最初に判断する。
+
+---------------------------------------------------------------------
+例 3：トリガー前／後の処理
+---------------------------------------------------------------------
+例
+- action 実行前に確認ダイアログを出す
+- 必須の補助入力があるときだけ action を実行する
+- 保存前にユーザーへ注意を表示する
+- action 成功後に画面を再読込する
+
+考え方
+- 業務上の可否判定は Backend action / validation に置く。
+- UI5 側では確認、入力補助、表示更新に限定する。
+- UI5 側で止めても API 直接呼出しは防げないため、Backend でも必ず止める。
+
+---------------------------------------------------------------------
+例 4：ソート・フィルタ・表示制御
+---------------------------------------------------------------------
+Fiori elements では annotation を優先する。
+- @UI.LineItem                一覧列
+- @UI.SelectionFields         フィルタバー
+- @UI.PresentationVariant     初期ソート・グループ・表示形式
+- @UI.Hidden                   非表示
+- @UI.ReadOnly / FieldControl 読み取り専用や編集可否
+- @Common.ValueList            Value Help
+
+UI5 controller extension が必要な例
+- ログインユーザーや画面遷移元に応じて一時的にフィルタを追加する
+- 標準機能で表せない複雑な表示切替をする
+- 複数の UI 状態をまとめて制御する
+
+---------------------------------------------------------------------
+例 5：画面遷移
+---------------------------------------------------------------------
+基本
+- 一覧から詳細への遷移は Fiori elements の標準ナビゲーションを使う。
+- 関連オブジェクトへ遷移する場合は CDS association と Intent-Based Navigation
+  （Semantic Object / Action）を検討する。
+- カスタム遷移は router と route parameter を明示し、画面間で不用意に状態を共有しない。
+
+遷移時に確認すること
+- 遷移先に必要なキーを渡しているか
+- ブラウザ戻る操作でも正しく表示できるか
+- 権限のない遷移先を UI だけで隠して終わりにしていないか
+
+---------------------------------------------------------------------
+例 6：画面の各種制御
+---------------------------------------------------------------------
+よくある要件と置き場所
+- 項目を編集不可にする      : FieldControl / UI.ReadOnly
+- ステータスでボタンを無効化 : action の availability annotation + Backend 検証
+- 明細を追加できないようにする: association の create 可否と UI 制御
+- 表示文言を変える            : i18n
+- 必須マークを出す            : annotation。Backend でも検証
+- 保存後に一覧を最新化する    : binding refresh / side effect
+
+======================================================================
+■ 共通：品質・運用のチェックリスト
+======================================================================
+□ 入力値は Backend で検証しているか
+□ 認可は CDS の @restrict を基本にしているか
+□ Java で標準 CRUD を不要に置き換えていないか
+□ 大量データをメモリで全件処理していないか
+□ DB 更新と外部連携の失敗時の扱いを設計したか
+□ UI5 拡張は annotation で実現できない部分だけになっているか
+□ メッセージが利用者に分かる文言になっているか
+□ ログにパスワード、トークン、個人情報を出していないか
+□ action、認可、異常系を含む自動テストを用意したか
+
+======================================================================
+■ 迷ったときの選び方
+======================================================================
+標準 CRUD／標準画面で実現できる
+  → CDS と annotation を使う
+
+保存時の業務チェックが必要
+  → CAP Java の @Before と ServiceException
+
+業務単位の処理・複数更新が必要
+  → service action + Java @On
+
+取得結果の表示専用加工が必要
+  → @After READ（大量データでは CDS / DB 側の表現を優先）
+
+画面だけの確認・一時表示・独自レイアウトが必要
+  → Fiori elements extension / UI5 controller extension
+
+外部システムを呼ぶ
+  → Destination を使い、同期／非同期、timeout、再送、冪等性を設計する
