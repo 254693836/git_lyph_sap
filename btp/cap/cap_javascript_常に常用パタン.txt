@@ -1,0 +1,77 @@
+CAP JavaScript + Fiori：よく使う実装パターン
+
+■ 役割分担
+CDS はデータモデル・OData サービス・認可・UI annotation、CAP Node.js は業務処理、
+Fiori elements は標準画面、UI5 extension は標準で不足する画面操作だけを担当する。
+
+基本形（srv/catalog-service.js）
+const cds = require('@sap/cds')
+const { SELECT, UPDATE } = cds.ql
+
+module.exports = cds.service.impl(function () {
+  const { Orders } = this.entities
+
+  this.before(['CREATE', 'UPDATE'], Orders, req => {
+    if (req.data.amount != null && req.data.amount < 0) {
+      return req.error(400, '金額は 0 以上を入力してください', 'amount')
+    }
+  })
+
+  this.on('approveOrder', async req => {
+    const order = await SELECT.one.from(Orders).where({ ID: req.data.ID })
+    if (!order) return req.reject(404, '対象データがありません')
+    if (order.status !== 'SUBMITTED') return req.reject(400, '申請済みだけ承認できます')
+    await UPDATE(Orders).set({ status: 'APPROVED' }).where({ ID: order.ID })
+    return SELECT.one.from(Orders).where({ ID: order.ID })
+  })
+})
+
+======================================================================
+■ Backend：頻出パターン
+======================================================================
+1. チェック処理
+- this.before('CREATE' / 'UPDATE', Entity, handler) に必須・形式・業務整合性を置く。
+- req.error は複数エラーを収集でき、req.reject は即時中断に使う。
+- UI の必須表示だけに依存せず、API 経由でも必ず同じチェックを行う。
+
+2. 取得処理
+- 標準 READ は CAP に任せる。独自処理が必要な場合だけ this.on('READ', ...) を使う。
+- this.after('READ', Entity, rows => ...) は表示専用の値の追加に限定する。
+- req.query を利用して $filter / $select / $orderby / paging を維持し、大量データを
+  全件読みして JavaScript で絞り込まない。
+
+3. DB 更新処理
+- 単純 CRUD は標準 OData を使う。承認・取消・一括処理は CDS action + this.on で実装する。
+- await cds.tx(req).run(...) でリクエストと同じトランザクションを利用する。
+- 親子更新は transaction 内で実施し、更新前に認可・状態・対象件数を確認する。
+
+4. 外部システム呼出し
+- cds.connect.to('外部サービス名') と Destination を使い、URL・秘密情報をコードに書かない。
+- timeout、エラー変換、再送可否、冪等性キーを設計する。
+- 時間のかかる処理は Outbox / Messaging / Job に渡し、同期 action を長時間ブロックしない。
+
+5. 認可・監査
+- @requires / @restrict を CDS に定義し、JavaScript の if 文だけで認可しない。
+- req.user を使って追加の組織・本人チェックをする。
+- managed（createdAt、createdBy など）を使える場合は手作業で重複実装しない。
+
+6. 親子・合計処理
+- 子の CREATE / UPDATE / DELETE 後に、親の合計・件数・状態を再計算する。
+- 再計算は DB 集計または必要な子だけを取得して行い、値が変わった場合だけ親を更新する。
+- Header と Item の整合性チェックは Backend 側で保証する。
+
+======================================================================
+■ Frontend：Fiori elements / UI5
+======================================================================
+- 一覧列、フィルタ、初期ソート、入力可否、Value Help は CDS annotation を優先する。
+- 業務ボタンは CDS action を定義し、Fiori elements の標準 action 表示を優先する。
+- 確認ダイアログ、ファイル選択、特殊レイアウトだけ controller extension / fragment を使う。
+- action 実行後は必要な binding を refresh し、成功・失敗メッセージを表示する。
+- 遷移は標準 navigation または Intent-Based Navigation を使い、キー・権限を確認する。
+
+■ 品質チェック
+□ 入力／認可を Backend でも検証している
+□ 標準 CRUD を不要に置換していない
+□ await を付け、非同期エラーを適切に処理している
+□ 外部接続情報・トークンをソースやログに出していない
+□ 正常、入力エラー、認可エラー、action、外部失敗をテストしている

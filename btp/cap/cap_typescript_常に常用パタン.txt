@@ -1,0 +1,76 @@
+CAP TypeScript + Fiori：よく使う実装パターン
+
+■ 基本方針
+CAP JavaScript のパターンに加え、TypeScript では cds-ts 等で生成したサービス・
+エンティティ型を利用し、req.data や戻り値を any にしない。CDS、認可、annotation、
+Fiori elements を優先し、型安全な Node.js ハンドラは業務処理だけに使う。
+
+基本形（srv/catalog-service.ts：概念）
+import cds from '@sap/cds'
+import { SELECT, UPDATE } from '@sap/cds/lib/ql/cds-ql'
+
+export default class CatalogService extends cds.ApplicationService {
+  async init() {
+    const { Orders } = this.entities
+
+    this.before(['CREATE', 'UPDATE'], Orders, req => {
+      const data = req.data as { amount?: number }
+      if (data.amount != null && data.amount < 0) {
+        req.error(400, '金額は 0 以上を入力してください', 'amount')
+      }
+    })
+
+    this.on('approveOrder', async req => {
+      const { ID } = req.data as { ID: string }
+      const order = await SELECT.one.from(Orders).where({ ID })
+      if (!order) return req.reject(404, '対象データがありません')
+      if (order.status !== 'SUBMITTED') return req.reject(400, '申請済みだけ承認できます')
+      await cds.tx(req).run(UPDATE(Orders).set({ status: 'APPROVED' }).where({ ID }))
+      return SELECT.one.from(Orders).where({ ID })
+    })
+    return super.init()
+  }
+}
+
+======================================================================
+■ Backend：頻出パターン
+======================================================================
+1. 型安全な入力チェック
+- action parameter、entity data、外部 API の応答に interface / 生成型を付ける。
+- null / undefined と部分更新（PATCH）を区別して検証する。
+- runtime の値検証も必須。TypeScript の型だけでは HTTP 入力を保証できない。
+
+2. 取得・検索
+- 標準 READ と OData query を優先する。@After READ は表示専用データの補完だけに使う。
+- 戻り値の型を明示し、外部サービスの unknown 応答を検証してから利用する。
+- $filter、paging、$orderby を壊す全件メモリ処理をしない。
+
+3. DB 更新・action
+- 単純 CRUD は標準、業務操作は CDS action + this.on にする。
+- cds.tx(req) 内で親子更新・状態遷移をまとめ、失敗時はロールバックさせる。
+- enum / union type でステータス候補を表現し、意図しない文字列更新を防ぐ。
+
+4. 外部連携
+- cds.connect.to と Destination を使う。通信リクエスト／応答の型を定義する。
+- timeout、再試行可否、冪等性、エラー変換を実装し、秘密情報を型定義やログに含めない。
+
+5. テスト・品質
+- tsconfig の strict を有効にし、npm run lint、npm test、npm run build を実行する。
+- 型エラーを any、as unknown as、非 null assertion だけで回避しない。
+- action、認可、異常系、外部 API 失敗を自動テストする。
+
+======================================================================
+■ Frontend：Fiori elements / UI5
+======================================================================
+- CDS annotation により一覧、フィルタ、ソート、Value Help、編集可否を定義する。
+- カスタムボタンは CDS action を中心にし、UI5 TypeScript extension では確認・表示更新・
+  一時 UI 状態だけを扱う。
+- UI5 TypeScript では controller、モデル、fragment の型を活用し、undefined の
+  コントロール参照や binding context 不在を明示的に処理する。
+- Intent-Based Navigation や router 遷移ではキーと権限を確認する。
+
+■ 共通チェック
+□ CDS の @restrict と Backend の追加認可を分離している
+□ UI の制御を Backend の業務チェックの代わりにしていない
+□ 型安全、トランザクション、外部エラー、テストを満たしている
+□ annotation で足りる画面制御に不要な UI5 extension を作っていない

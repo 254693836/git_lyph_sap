@@ -1,0 +1,44 @@
+CAP TypeScript + Fiori アプリ作成：AI への依頼内容（仕様テンプレート）
+
+参照資料：btp/cap/cap_typescript_常に常用パタン.txt
+
+■ AI への依頼文
+あなたは SAP CAP Node.js（TypeScript）、CDS、OData V4、Fiori elements / SAPUI5 の
+開発者です。参照資料に従い、以下のアプリケーションを設計・実装してください。
+既存構成を先に調査し、要件が不足する場合は質問してください。
+
+■ 業務要件（[] を記入）
+アプリ名：[ ]
+業務目的：[ ]
+利用者・ロール：[ ]
+Header / Item エンティティと主な項目：[ ]
+composition・関連エンティティ：[ ]
+
+■ Backend 要件
+- 入力／業務チェック：[ ]
+- OData の取得・検索・表示用計算：[ ]
+- action と状態遷移：[ ]
+- 親子更新・合計／件数の再計算：[ ]
+- 外部 API／Destination、同期・非同期、失敗時の扱い：[ ]
+- @restrict と追加のデータ単位認可：[ ]
+
+■ Frontend 要件
+- List Report / Object Page / UI5 拡張：[ ]
+- 列、フィルタ、ソート、Value Help：[ ]
+- action ボタン、入力項目、表示・編集条件：[ ]
+- 遷移、refresh、メッセージ：[ ]
+
+■ 必須条件
+- CDS / annotation を優先し、標準 CRUD を不要に置換しない。
+- 実装は TypeScript で行い、strict な型チェックを維持する。入力・外部応答は runtime でも検証する。
+- action は CDS と this.on、複数更新は cds.tx(req) を用いる。
+- 認証情報をコード・ログに残さず、外部連携は Destination 等の設定を使う。
+- npm run lint、npm test、npm run build（存在するもの）を実行し、結果を報告する。
+
+■ AI に提出してほしいもの
+設計概要、変更ファイル一覧、実装、型・lint・テスト結果、未確定事項、利用者側の設定事項。
+
+■ 受入条件
+- 指定ロールで CRUD と action が正しく動作する。
+- 業務エラー、認可エラー、外部失敗が利用者向けに処理される。
+- 親子の整合性を保存時に保証し、型チェック・テストが成功する。
