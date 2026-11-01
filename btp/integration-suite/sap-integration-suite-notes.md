@@ -127,6 +127,85 @@ Groovyはマッピングの前後など、必要な位置に置けます。iFlow
 4. 必要なら、CAPなどで開発した外部APIを途中から呼ぶこともできる。
 5. 最初にパッケージを作り、その中にiFlowを作成する。
 
+## 8. 補足：iFlowの接続先と認証情報を管理する方法
+
+### 8-1. 今回説明した接続方法の前提
+
+Salesforceから受注データを取得し、変換してS/4HANAへ登録依頼する連携を想定しています。以下は、標準のHTTP・ODataアダプターなどで、接続先URLと認証情報の参照名を設定する場合の基本的な整理です。
+
+実際のAPI、アダプター、認証方式はまだ未決定です。必要な設定項目は、それらによって変わります。
+
+### 8-2. 設定する場所は三つに分ける
+
+| 順番 | 場所 | 管理する内容 |
+|---|---|---|
+| 一つ目 | iFlow | データを取得・変換・送信する処理の流れ |
+| 二つ目 | iFlowのアダプター | 接続先URL、認証方式、使用する認証情報の登録名など |
+| 三つ目 | Integration SuiteのSecurity Material | ユーザー名・パスワードやOAuth用の認証情報などを、種類に応じて登録 |
+
+**URLはアダプター、認証情報はSecurity Material、アダプターから登録名で参照する**、という関係です。
+
+ユーザー名やパスワードを、iFlowごとに直接書き込むという意味ではありません。登録済みの認証情報を複数のiFlowから参照することもできます。
+
+### 8-3. S/4HANAへの接続をどこで定義するか
+
+一つ目：iFlowの送り先として、S/4HANAを表すReceiverを配置します。
+
+二つ目：送信処理（例えばRequest Reply）からReceiverへ線をつなぎ、利用するAPIに合わせた受信アダプターを選びます。
+
+三つ目：その接続線のアダプターを選択し、Connectionなどの設定欄で接続先や認証を設定します。登録操作や送信方法などは、アダプターに応じてProcessingなどで設定します。
+
+ここで「Receiver」は、データを受け取る相手であるS/4HANAを指します。「受信アダプター」という名称でも、iFlowから相手へ送るための接続設定です。
+
+Receiverの箱は送り先を表し、接続線のアダプターが実際の接続方法を定義します。
+
+### 8-4. Security Materialの場所と操作例
+
+画面の場所：
+
+**Integration Suite → Monitor → Integrations and APIs → Manage Security → Security Material**
+
+ここには、名前を付けて登録した認証情報が一覧で表示されます。BTPコックピットのDestinationsとは別の画面です。
+
+ユーザー名とパスワードで認証する場合の例：
+
+1. Security Materialで **Create → User Credentials** を選びます。
+2. 名前と、接続先で認証に使用するユーザー名・パスワードを登録し、利用可能な状態にします。
+3. iFlowのアダプターで、接続先URLと対応する認証方式を設定します。
+4. **Credential Name** に、Security Materialで登録した名前を指定します。
+5. iFlowを反映してテストし、接続結果と送り先での処理結果を確認します。
+
+実行時は、指定した登録名に対応する認証情報を使って接続します。OAuthの場合は、認証方式に応じた種類の認証情報を登録します。アクセストークンを常に手作業で入力する、という意味ではありません。
+
+### 8-5. BTP Destinationsとの違い
+
+| 比較 | BTP Destinations | Cloud IntegrationのSecurity Material |
+|---|---|---|
+| 場所 | BTPコックピットのConnectivity → Destinations | Integration SuiteのMonitor内 |
+| 役割 | URLや認証方式などをまとめた接続設定を、名前付きで管理する | Cloud Integrationで利用する認証情報を管理する |
+| 名前が指すもの | 接続設定の名前 | 認証情報の名前 |
+| 今回説明したHTTP・OData接続での扱い | 登録しただけでは、その名前から接続設定が自動的に引き継がれるわけではない | アダプターのCredential Nameなどから参照する |
+
+**今回説明した方式では、BTP Destinationsへの登録を前提にせず、iFlowのアダプター設定とSecurity Materialを組み合わせて接続します。**
+
+ただし、DestinationがiFlowで一切使えない、という意味ではありません。例えばRFC受信アダプターには、BTPに定義したRFC Destinationの名前を指定する設定があります。HTTP用とRFC用のDestinationは区別します。
+
+### 8-6. Integration Suiteの内側と外側で準備すること
+
+Integration Suite側で管理するもの：
+
+1. iFlowの処理手順。
+2. アダプターの接続先URL・認証方式など。
+3. Security Materialなどに登録する認証情報。
+
+相手のシステム側で準備するもの：
+
+1. SalesforceやS/4HANAの利用対象API。
+2. APIを呼び出せるユーザーやアプリの権限、認証設定。
+3. 必要なネットワーク接続。社内ネットワークへの接続では、構成に応じてCloud Connectorなども準備する。
+
+したがって、「連携設定はIntegration Suite側でまとめて管理する」という理解はできますが、相手側のAPIや権限の準備も必要です。
+
 ## 参考：公式資料
 
 - [SAP Integration Suiteの概要](https://learning.sap.com/courses/exploring-sap-platform-capabilities/illustrating-the-sap-integration-suite_b1c98a93-d3ca-4121-88ef-36bd397fae52)
@@ -135,4 +214,8 @@ Groovyはマッピングの前後など、必要な位置に置けます。iFlow
 - [外部APIを呼び出すRequest Reply](https://help.sap.com/docs/integration-suite/sap-integration-suite/define-request-reply)
 - [CAP Javaのサービス公開](https://cap.cloud.sap/docs/java/cqn-services/application-services)
 - [Apache Groovy](https://groovy-lang.org/)
-
+- [認証情報（User Credentials）の登録](https://help.sap.com/docs/integration-suite/isuite-integrations-and-apis/deploying-user-credentials-artifact)
+- [HTTP受信アダプター](https://help.sap.com/docs/integration-suite/sap-integration-suite/http-receiver-adapter)
+- [OData V4受信アダプター](https://help.sap.com/docs/cloud-integration/sap-cloud-integration/configure-odata-v4-receiver-adapter)
+- [RFC受信アダプターとRFC Destination](https://help.sap.com/docs/integration-suite/sap-integration-suite/rfc-receiver-adapter)
+- [BTP Destinationの作成](https://developers.sap.com/tutorials/cp-cf-create-destination)
