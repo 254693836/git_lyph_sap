@@ -206,6 +206,168 @@ Integration Suite側で管理するもの：
 
 したがって、「連携設定はIntegration Suite側でまとめて管理する」という理解はできますが、相手側のAPIや権限の準備も必要です。
 
+## 9. 補足：サブスクリプションとサービスインスタンス
+
+### 一つ目：サブスクリプション
+
+提供されているアプリを利用するための登録です。Integration SuiteやSAP Business Application Studio（BAS）のアプリ画面は、サブスクリプションから開きます。
+
+例：**BTPコックピット → 対象サブアカウント → Services → Instances and Subscriptions → Subscriptions → Integration Suite → Go to Application**
+
+BASの正式名称はSAP Business Application Studioです。
+
+### 二つ目：サービスインスタンス
+
+サービスを利用するために作る個別の利用単位です。用途に応じたプランや設定を選び、アプリなどから利用します。データベースや認証など、サービスによって役割は異なります。
+
+Integration Suiteに関連する例として、Process Integration Runtimeのサービスインスタンスがあります。外部からiFlowなどを呼び出すための認証・権限設定や、サービスキーの作成などに使います。
+
+**インスタンスは認証専用ではありません。また、管理画面があるかどうかだけで、サブスクリプションとインスタンスを判定することはできません。**
+
+## 10. 補足：Integration Suiteのメニュー
+
+有効にした機能や権限によって、表示されるメニューや項目は異なります。
+
+| メニュー | 主な役割 |
+|---|---|
+| Home | 全体の入口。最近の作業や利用可能な機能、状態の概要を見る |
+| Discover | 用意された連携コンテンツやAPIを探す |
+| Design | iFlowやマッピングなどを作成・編集する |
+| Test | 主にAPIを呼び出して応答などを確認する |
+| Configure | API管理やイベント連携などの構成を設定する |
+| Monitor | 処理結果、実行状態、エラーを確認する。認証情報の管理にもここから入る |
+| Analyze | APIの利用回数、応答時間、エラーなどの傾向を分析する |
+| Engage | APIをAPI Productとしてまとめ、利用するアプリなどを管理する |
+| Inspect | iFlowなどのメモリやデータベース接続など、リソース消費を調べる |
+| Monetize | API利用の料金プランや請求関連情報を管理する |
+| Settings | 各機能や実行環境などの共通設定を行う |
+
+今回のiFlow開発では、まず **Discoverで探す → Designで作る・設定する → Monitorで結果を見る** という関係を押さえます。
+
+Testメニューで、iFlow開発のすべてのテストを行うという意味ではありません。iFlowのシミュレーションは、処理図の編集画面から利用します。
+
+## 11. 補足：Discoverの一覧とマッピングの確認場所
+
+### Discoverは、自分が作ったものの一覧ではない
+
+登録した直後でも多数の項目が表示されるのは、SAPなどが提供する連携コンテンツのカタログだからです。
+
+「レシピ集」のように、用意された連携を探して、自分の環境へ取り込めます。ただし、**すべてが練習用サンプルというわけではなく、業務で利用するための標準コンテンツも含まれます。**
+
+一つ目：パッケージを探して、説明と中身を確認する。
+
+二つ目：必要なパッケージをCopyしてDesignへ取り込む。
+
+三つ目：自分の接続先や認証情報などを設定し、テストして利用する。
+
+一覧に表示されているだけで、自分の環境にインストール・実行されているという意味ではありません。
+
+### 相談時に確認した例
+
+パッケージ：**SAP Order Management Foundation Integration with SAP S/4HANA Cloud**
+
+注文管理側とS/4HANA側を連携するための標準コンテンツです。
+
+その中で開いた項目：**Delivery Option SAP S4HANA Cloud Value Mapping**
+
+これはiFlow本体ではなく、注文管理側の配送オプションと、S/4HANA側の出荷条件の値を対応させる表です。
+
+| 左側の組み合わせ | 右側の組み合わせ |
+|---|---|
+| OrderManagement / DeliveryOption | S/4HANACloud / ShippingCondition |
+
+上段で対応する組み合わせを選ぶと、下段に値の対応が表示されます。双方向の対応表であり、実際にどちらの向きで変換するかは、iFlow側の呼び出しで決まります。
+
+### Value MappingとMessage Mappingの違い
+
+- **Value Mapping**：「このコードを、相手のどのコードに変えるか」という値の対応表。
+- **Message Mapping**：「送り元のどの項目を、送り先のどの項目に設定するか」と、その変換ルール。
+
+### 項目全体の対応を確認する操作
+
+1. 画面上部のパッケージ名を押して、パッケージへ戻る。
+2. Artifacts（相談時の中国語表示では「部件」）の一覧を開く。
+3. 種類がIntegration Flowの項目を開く。
+4. 処理図でMessage Mappingのステップを選ぶ。
+5. Processingなどの設定に表示されるマッピング名を開く。
+6. 左側の変換元、右側の変換先を確認する。項目や接続を選び、Mapping Expressionsで変換ルールを見る。
+
+変換方法はMessage Mappingに限りません。GroovyやXSLTで処理している場合は、そのファイルを確認します。Groovyのステップを見つけただけでは、そこでマッピングしているかどうかは判断できません。
+
+修正する場合は、Discoverの元コンテンツではなく、Design側へ取り込んだ内容で作業します。標準コンテンツによって、設定変更・編集・拡張の方法は異なります。
+
+## 12. 補足：Groovyの実装を開く・追加する
+
+### ソースコードを確認する操作
+
+**iFlowの処理図 → Groovy Scriptのステップ → Processing → Script Fileのリンク**
+
+相談では、このリンクからファイルを開き、Javaに似たソースコードを確認しました。
+
+- **Script File**：どのファイルを使うか。
+- **Script Function**：そのファイル内のどの関数を呼ぶか。標準のprocessData関数を使う場合などは、空欄にできる場合があります。
+- **ソースコード**：実際に行う加工やチェックなどの処理。
+
+### GroovyとJavaの関係
+
+GroovyはJavaに近い言語ですが、**Javaと同じ言語ではありません**。Javaのクラスやライブラリを利用でき、短いスクリプトとしても記述できます。
+
+- import：使用するクラスなどを名前で参照するための宣言。
+- def：型を明示しない変数やメソッドの定義などに使う書き方。
+- 関数の中身：具体的な処理。宣言だけで、どんなデータ変換をするかは分かりません。
+
+### 自分のiFlowに新しいスクリプトを追加する操作
+
+1. **Design → Integrations and APIs → パッケージ → 自分のiFlow → Edit**を開く。
+2. **Message Transformers → Script → Groovy Script**を選び、必要な位置にステップを置く。
+3. スクリプトのステップの**Create**からファイルを作成し、コードを書く。
+4. **Apply → Save**で反映・保存する。
+
+パソコンにあるファイルを使う場合は、スクリプトの設定の **Processing → Select → Local Resources** からアップロードする方法もあります。取り込んだファイルを、そのステップで使うように指定します。
+
+**箱は「処理を実行する位置」、ファイルは「実行するコード」です。**
+
+### Eclipseは必須か
+
+必須ではありません。
+
+一つ目：簡単な処理なら、Integration Suite内のエディターで直接作成・修正する。
+
+二つ目：外部の開発ツールで作成・テストし、ファイルを取り込む。Eclipseを使う場合はGroovy用プラグインなどを準備します。SAPのAPIを使うコードでは、開発環境に対応するライブラリの準備が必要になることもあります。
+
+使用するツールは、処理の規模やチームの開発方針に合わせて選びます。
+
+## 13. 補足：Groovyを含む処理のテスト
+
+### iFlowのシミュレーション
+
+デプロイ前でも、iFlowの一部を範囲指定して試せます。
+
+1. 処理図に戻り、スクリプトの前後の接続線にStart PointとEnd Pointを設定する。
+2. テスト用の入力データを指定する。必要なHeadersやPropertiesも設定する。
+3. Run Simulationを実行し、出力データを確認する。
+
+ただし、シミュレーションに対応するステップや実行条件には制約があります。外部サービスや認証情報などに依存する処理では、同じように試せない場合があります。
+
+### メソッド単体のテストとの違い
+
+iFlowのシミュレーションは、指定した範囲の処理ステップを動かすものです。ソースコード内の任意のメソッドを直接指定して呼び出す単体テストとは区別します。
+
+個々の関数に入力と期待結果を用意して繰り返し検証する場合は、外部の開発ツールやテストの仕組みを利用できます。シミュレーションで変換結果を確認しても、実際の接続先での登録結果などは別途確認します。
+
+## 14. 補足：API Managementの操作の大筋
+
+既存のAPIに管理用の窓口を付ける例です。
+
+1. 接続先を設定する。API Providerを作成、または既存の設定を利用する。
+2. API Proxyを作成し、接続先のAPIと利用者向けの窓口を設定する。
+3. 必要な認証確認や回数制限などのポリシーを設定する。
+4. 保存してデプロイする。
+5. 管理用の窓口を呼び、応答や制限をテストする。
+6. 利用状況やエラーを確認する。
+
+**利用するシステム → API Proxy → 接続先のAPI** という関係です。必要に応じてAPIをAPI Productにまとめます。これは、iFlowでデータ変換の手順を作ることとは役割が異なります。
+
 ## 参考：公式資料
 
 - [SAP Integration Suiteの概要](https://learning.sap.com/courses/exploring-sap-platform-capabilities/illustrating-the-sap-integration-suite_b1c98a93-d3ca-4121-88ef-36bd397fae52)
@@ -219,3 +381,12 @@ Integration Suite側で管理するもの：
 - [OData V4受信アダプター](https://help.sap.com/docs/cloud-integration/sap-cloud-integration/configure-odata-v4-receiver-adapter)
 - [RFC受信アダプターとRFC Destination](https://help.sap.com/docs/integration-suite/sap-integration-suite/rfc-receiver-adapter)
 - [BTP Destinationの作成](https://developers.sap.com/tutorials/cp-cf-create-destination)
+- [サブスクリプションとインスタンスの作成](https://developers.sap.com/tutorials/btp-cockpit-instances/)
+- [BASの利用登録と起動](https://developers.sap.com/tutorials/appstudio-onboarding)
+- [Integration Suiteのホームとメニュー](https://help.sap.com/docs/integration-suite/sap-integration-suite/working-with-integration-suite-home)
+- [配送オプションの値の対応設定](https://help.sap.com/docs/SAP_Order_Management_Foundation/95fb0d8e21b9460b8e4690ebbc667d92/4273dccdaf774dd3a528cf62fa01d082.html)
+- [Groovyのステップとファイルの追加](https://github.com/SAP-docs/btp-integration-suite/blob/main/docs/ISuite_Integrations_APIs/define-a-local-script-step-03b32eb.md)
+- [EclipseでSAP Script APIを使う方法](https://help.sap.com/docs/integration-suite/sap-integration-suite/using-script-api-methods-in-groovy-scripts)
+- [スクリプト開発の指針](https://help.sap.com/docs/cloud-integration/sap-cloud-integration/general-scripting-guidelines)
+- [iFlowのシミュレーション設定](https://help.sap.com/docs/integration-suite/isuite-integrations-and-apis/configure-simulation?state=PRODUCTION)
+- [API Proxyの作成とテスト](https://developers.sap.com/tutorials/hcp-apim-create-api)
