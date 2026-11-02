@@ -390,3 +390,105 @@ iFlowのシミュレーションは、指定した範囲の処理ステップを
 - [スクリプト開発の指針](https://help.sap.com/docs/cloud-integration/sap-cloud-integration/general-scripting-guidelines)
 - [iFlowのシミュレーション設定](https://help.sap.com/docs/integration-suite/isuite-integrations-and-apis/configure-simulation?state=PRODUCTION)
 - [API Proxyの作成とテスト](https://developers.sap.com/tutorials/hcp-apim-create-api)
+
+
+## 15. 2026-11-03追記：Sender・ReceiverとAdapter
+
+### 「箱」と「矢印」の役割
+- **Sender（箱）**：呼び出し元システムを表す。例：Salesforce。名前は分かりやすい論理名にする。
+- **Sender Adapter（接続線・矢印）**：SenderからStart Eventへの接続で選ぶ。例：HTTP、SOAP。Address（受信パス）、認証などを設定。
+- **Receiver（箱）**：送信先システムを表す。例：S4HANA_FI。表示名そのものが接続先URLになるわけではない。
+- **Receiver Adapter（接続線・矢印）**：Request ReplyなどからReceiverへ接続する線で選ぶ。例：HTTP、SOAP、OData V2、RFC、ProcessDirect。URL、認証、操作などを設定。
+- Sender用とReceiver用では選択可能なAdapterが異なる。すべての種類を両側で選べるわけではない。
+- 接続先URLや認証情報の参照名はAdapter側で設定。実際の認証情報はSecurity Materialなどで管理。
+- Receiver本体の名前を変えても、通常はAdapterで指定した接続先URLは変わらない。
+
+### 連携例
+```text
+Salesforce
+   │ HTTP Sender Adapter
+   ▼
+Start → Message Mapping → Groovy Script → Request Reply
+                                             │ OData V2 Receiver Adapter
+                                             ▼
+                                           S/4HANA
+```
+- HTTP SenderでAddressを`/order`に設定すると、デプロイ後のCloud Integrationのランタイムホストと組み合わせたURLが公開される。呼び出しには認証・権限が必要。
+- S/4HANAのSEGWで作ったODataサービスをReceiverで呼び出す例：`https://example.sap.com/sap/opu/odata/sap/ZORDER_SRV/`（架空のURL）。
+- 開発・本番でURLが違う場合は外部化パラメータなどによる切り替えを検討する。
+
+### 複数Senderと共通処理
+- 複数の入口を設計するとき、同一Start Eventに何本も接続できると決めつけない。
+- 例：HTTP入口のiFlow A、SOAP入口のiFlow Bから、共通処理のiFlow Cを**ProcessDirect Adapter**で呼ぶ。
+- 入力形式が異なるなら、iFlow Cへ渡す前に共通のXML/JSON構造に揃える。
+- ABAPで例えると、異なる二つのプログラムから共通クラスを呼ぶイメージ。
+- 同一iFlow内で共通処理をまとめる選択肢としてLocal Integration Processもある。
+
+## 16. Message MappingとGroovy Script
+
+| 機能 | 役割 | ABAPのイメージ |
+|---|---|---|
+| Message Mapping | 入力と出力の項目を対応付け、定数・標準関数などで変換 | 項目マッピング |
+| Mapping内のカスタム関数 | Mapping編集画面で定義・参照する独自の項目変換 | 変換用ヘルパー |
+| Groovy Scriptステップ | Body、Headers、Propertiesを持つメッセージ全体を加工 | 内部テーブル全体の処理 |
+| Content Modifier | Body、Header、Exchange Propertyを設定 | 変数・固定値の代入 |
+
+- Mapping内のGroovyカスタム関数と、独立したGroovy Scriptステップは別物。
+- Groovy ScriptはiFlow実行がステップに到達すると実行される。典型的な入口は`processData(Message message)`。Script Functionの設定で入口関数を指定できる場合もある。
+- 補助メソッドは入口メソッドから呼び出す。
+- Groovy Scriptが受け取るのは通常、一行の構造ではなくXML/JSONなどをBodyに持つ**メッセージ全体**。XML/JSONを解析し、必要なら自分でループする。
+- 例：XMLの注文が100件あれば、Groovyで100件を順番に処理し、変更後に`message.setBody(...)`で結果を戻す。
+- 逆にレコード単位で後続ステップを実行したい場合は、Splitterの利用を検討する。
+
+## 17. 複数Receiver：RouterとMulticast
+
+| ステップ | 役割 | 例 | ABAPとの比較 |
+|---|---|---|---|
+| Router | 条件に応じて処理経路を選ぶ | 金額1万円以上→S/4HANA、それ以外→Salesforce | IF / ELSE |
+| Multicast | 同じメッセージを複数の処理経路へ分岐する | 同じ注文をS/4HANAとSalesforceに送る | 二つのAPIを呼ぶ |
+| Request Reply | 外部サービスを呼び、応答を待つ | OData APIの同期呼び出し | 同期RFCの感覚 |
+| Send | 応答を待たない送信処理で使う | 非同期送信 | 非同期連携 |
+
+- Receiverを二つ置くだけで両方へ自動送信されるわけではない。経路と送信ステップを設計する。
+- Multicastには順次処理と並列処理の方式がある。送信先ごとに必要なMappingを配置できる。
+- 複数送信先への更新は自動的に一つのトランザクションにはならない。部分失敗、再試行、重複登録への対策が必要。
+
+## 18. 実務でよく使う追加ステップ・機能
+
+| 名前 | 役割 | 使い方の例 |
+|---|---|---|
+| Content Modifier | Body、Header、Propertyを設定 | 固定値、後続処理用の変数 |
+| Filter | XMLの必要な部分を抽出 | 不要ノードの除去 |
+| JSON to XML Converter / XML to JSON Converter | 形式変換 | Mapping前後の形式調整 |
+| General Splitter / Iterating Splitter | 複数レコードを分割 | 明細を一件ずつ処理 |
+| Gather | 分割結果を集約 | Splitterの後でまとめる |
+| Router | 条件分岐 | 項目値で送信先を選択 |
+| Multicast | 複数経路に分岐 | 複数システムへの配信 |
+| Request Reply | 同期要求・応答 | ODataサービス呼び出し |
+| Send | 送信処理 | 応答を必要としない連携 |
+| Local Integration Process / Process Call | iFlow内の共通処理 | 重複ロジックの集約 |
+| ProcessDirect Adapter | iFlow間の直接連携 | 複数入口から共通iFlowへ |
+| Exception Subprocess | エラー発生時の処理 | エラー通知、ログ、エラー応答 |
+| Data Store Operations | データ保存・取得 | 再処理や非同期連携の補助 |
+| Timer Start Event | 定期実行 | 毎日APIからデータ取得 |
+| End Event | 処理終了 | 正常終了、応答の返却 |
+
+**ステップ以外で必要な知識**：
+- Security Material：認証情報・証明書の管理。
+- Cloud Connector：構成によってオンプレミスSAPへの接続に利用。
+- Save / Deploy：iFlowの保存・実行環境への反映。
+- Monitor / Trace：処理結果・メッセージ内容・エラーの確認。機密データのログ出力に注意。
+- Simulation：対応する処理範囲のテスト。実接続先への登録テストとは別。
+- エラー処理、タイムアウト、再送、冪等性、メッセージ重複への対応。
+
+## 19. 学習用の実装順序
+
+1. 連携仕様：呼び出し元・先、通信方式、認証、データ形式、同期/非同期を決める。
+2. Sender、Start、Receiverを配置し、矢印のAdapter Typeと接続情報を設定。
+3. Content Modifierで必要なHeader/Propertyを準備。
+4. Message Mappingで変換し、必要ならGroovy Scriptを追加。
+5. Router、Multicast、Splitter、Request Replyなどで経路を作る。
+6. Exception Subprocessでエラー時の処理を設計。
+7. Deployし、Monitor/Traceで確認。S/4HANA側の実際の登録結果も検証。
+
+※学習用の一般的な整理。利用できるステップ・Adapterや設定項目は、SAP Cloud Integrationの環境・バージョン・構成により異なる。
