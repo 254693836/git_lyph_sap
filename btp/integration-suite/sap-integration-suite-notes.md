@@ -492,3 +492,86 @@ Start → Message Mapping → Groovy Script → Request Reply
 7. Deployし、Monitor/Traceで確認。S/4HANA側の実際の登録結果も検証。
 
 ※学習用の一般的な整理。利用できるステップ・Adapterや設定項目は、SAP Cloud Integrationの環境・バージョン・構成により異なる。
+
+
+## 20. SAP Event Mesh：イベント駆動の非同期連携
+
+- Event Meshはイベントの発行元（Publisher）と受信側（Consumer）を疎結合にするメッセージング機能。
+- 例：`Salesforce → Event Mesh Topic(customer/created) → Queue A/B/C → iFlow A/B/C → S/4HANA・CRM・分析基盤`。
+- PublisherはTopicへイベントを発行する。各QueueはTopicの購読設定に従ってメッセージを受け取る。各iFlowは対応するQueueから受信する（例：AMQP Sender Adapter）。
+- **TopicはiFlowのURLではない**。Topicによる配信と、Queueからの受信は別の役割。
+- 同じイベントを複数のQueueに配信するファンアウトと、同じQueueを複数Consumerで処理する競合コンシューマーは異なる。
+- S/4HANAが停止しても他の独立したConsumerは処理を進められる。滞留・再送の可否はQueueの保持期間、ACK、再配信、エラー設定に依存する。
+- 配信の重複に備え、受信側ではイベントIDなどを利用した冪等性を設計する。
+
+## 21. Event MeshとiFlowの使い分け
+
+| 観点 | HTTPによる同期iFlow | Event Mesh＋iFlow |
+| --- | --- | --- |
+| 呼び出し | 呼び出し元がエンドポイントへリクエスト | 発行元がTopicへイベント発行 |
+| 応答 | 同期応答を返せる | 通常は別の結果通知・照会が必要 |
+| 結合 | 呼び出し先との結合が比較的強い | 発行元とConsumerを分離しやすい |
+| 複数配信 | iFlowのMulticastなど | Topicの購読先Queueに配信 |
+| 主な用途 | 画面から即時結果が必要な登録・照会 | 複数システム通知、非同期バッチ、負荷平準化 |
+
+- **Event Meshで受信成功＝S/4HANAの登録成功、ではない**。処理結果を返したい場合はステータスAPI、結果イベント、コールバック等を設計する。
+- 100件を非同期登録するなら、受付IDと件数別の成功・失敗情報を追跡する仕組みが必要。
+- 処理B/CがAの完了を待つ必要がある場合、単純なファンアウトではなく、オーケストレーションや完了イベントを使う。
+- Event Meshは必須ではなく、単純な連携なら直接iFlowやMulticastも選択肢。
+
+## 22. B2B・EDIとiFlowの関係
+
+- **B2B**：企業間取引の連携。**EDI**：発注書・請求書等の業務文書を合意した電子形式で交換する仕組み。
+- EDI標準にはUN/EDIFACT、ANSI X12などがある。標準を利用しても企業ごとの項目・運用ルールの差があるためマッピングが不要になるとは限らない。
+- **iFlow**は受信、変換、ルーティング、送信を実行する技術。B2B・EDIはiFlowとは別の処理エンジンという意味ではない。
+- 例（架空の通信方式）：小売企業からAS2でEDI発注を受信 → iFlowで識別・検証・変換 → IDocまたはAPIでS/4HANAに受注登録。
+- 外部から受信するiFlowと、ProcessDirect等で呼び出す内部iFlowを分割できる。単一iFlowで完結してもよい。
+- SAP提供のB2B標準コンテンツを使える場合は、すべてを一から開発する必要はない。
+
+## 23. Trading Partner Management（TPM）
+
+- TPMはB2Bの**取引先、取引合意、通信方式、メッセージ形式などの設定を管理**する。
+- 例：取引先A/B/Cがそれぞれ異なるEDI形式や通信条件を使う場合、設定を取引先ごとに整理する。
+- TPMはiFlowデザイナーのようにSender、Router、Mapping等を自由に配置する処理図の画面ではない。
+- **TPMは設定管理、Cloud IntegrationのiFlowは実行処理**という役割分担。標準B2Bフローと組み合わせるか、要件に応じて独自フローを開発する。
+- TPMの設定だけで任意のiFlowが自動生成・起動するわけではない。標準コンテンツの構成・適用範囲は利用環境で確認する。
+
+## 24. TPMの取引先とS/4HANAのBP・得意先マスタ
+
+- TPMの取引先情報とS/4HANAのBP・得意先マスタは**別々に保存・管理**される。
+- S/4HANA：得意先番号、住所、支払条件、統制勘定などの業務マスタ。
+- TPM：EDI用の取引先識別子、通信・メッセージ条件、取引合意など。
+- TPMの取引先IDとS/4HANAのBP/得意先番号は必ずしも同一ではない。対応付けを設計する。
+- 共通項目をS/4HANAから定期連携する設計は可能だが、**標準で全項目が自動同期されるという意味ではない**。実装可能なAPI・項目・権限は環境ごとに確認する。
+
+## 25. API Management：iFlowとの違いと管理単位
+
+- **Cloud Integration / iFlow**：データ受信、変換、送信などの実処理。
+- **API Management**：APIを公開し、アクセス・認証・トラフィック等を管理する入口。
+- 例：`Salesforce → API Management（API Proxy）→ iFlow → S/4HANA`。
+- **API Provider**：APIのバックエンド接続先情報。
+- **API Proxy**：外部に公開するAPIの代理エンドポイント。認証・呼び出し制限などのポリシーを設定可能。
+- **API Product**：複数のAPI Proxyを利用者向けにまとめて提供する単位。単なるフォルダーではなく、アプリケーションへの提供・利用許可と関係する。
+- 例：CustomerAPI、SalesOrderAPI、StockAPIを「Salesforce向けAPI」というAPI Productにまとめる。
+- **API Productのグループ化とAPI Proxyの細かなポリシー設定は別の概念**。Productを作るだけで自動的に全アクセス権が設定されるわけではない。
+- Cloud IntegrationのPackageはiFlow等の開発成果物の整理単位であり、API Productとは目的が異なる。
+
+## 26. 主要機能の全体像と次の学習
+
+| 機能 | 一言でいう役割 |
+| --- | --- |
+| Cloud Integration | iFlowでシステム間データを変換・連携 |
+| Event Mesh | イベントを非同期で配信し疎結合化 |
+| B2B・EDI / TPM | 企業間の文書交換と取引先ごとの設定管理 |
+| API Management | APIの公開、グループ化、アクセス制御 |
+
+ここまでで**主要機能の概念的な第一段階**を学習した。Integration Suiteの全機能を網羅したわけではなく、Open Connectors、Integration Assessment、Migration Assessment、セキュリティ、監視・エラー処理・運用などは追加学習対象。
+
+**実践の推奨順**：
+1. HTTP SenderからS/4HANA APIへ送る基本iFlowを作成し、Monitorで追跡。
+2. API Proxyを作り、認証・レート制限・API Productを試す。
+3. Event MeshでTopicとQueueを作り、別々のiFlowへイベントを配信。
+4. EDIサンプルとTPMの取引先設定を確認し、標準B2Bコンテンツの流れを追う。
+5. エラー、再送、重複、認証、メッセージ追跡を検証する。
+
+※説明中の会社名・通信方式は学習用の仮例であり、実在企業の実際のEDI方式を示すものではない。
