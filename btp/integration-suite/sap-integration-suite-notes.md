@@ -383,29 +383,6 @@ iFlowのシミュレーションは、指定した範囲の処理ステップを
 
 **利用するシステム → API Proxy → 接続先のAPI** という関係です。必要に応じてAPIをAPI Productにまとめます。これは、iFlowでデータ変換の手順を作ることとは役割が異なります。
 
-## 参考：公式資料
-
-- [SAP Integration Suiteの概要](https://learning.sap.com/courses/exploring-sap-platform-capabilities/illustrating-the-sap-integration-suite_b1c98a93-d3ca-4121-88ef-36bd397fae52)
-- [パッケージとiFlowの作成・デプロイ](https://developers.sap.com/tutorials/cp-starter-integration-cpi-design-iflow)
-- [Cloud Integrationの処理機能](https://help.sap.com/docs/cloud-integration/sap-cloud-integration/integration-capabilities?locale=en)
-- [外部APIを呼び出すRequest Reply](https://help.sap.com/docs/integration-suite/sap-integration-suite/define-request-reply)
-- [CAP Javaのサービス公開](https://cap.cloud.sap/docs/java/cqn-services/application-services)
-- [Apache Groovy](https://groovy-lang.org/)
-- [認証情報（User Credentials）の登録](https://help.sap.com/docs/integration-suite/isuite-integrations-and-apis/deploying-user-credentials-artifact)
-- [HTTP受信アダプター](https://help.sap.com/docs/integration-suite/sap-integration-suite/http-receiver-adapter)
-- [OData V4受信アダプター](https://help.sap.com/docs/cloud-integration/sap-cloud-integration/configure-odata-v4-receiver-adapter)
-- [RFC受信アダプターとRFC Destination](https://help.sap.com/docs/integration-suite/sap-integration-suite/rfc-receiver-adapter)
-- [BTP Destinationの作成](https://developers.sap.com/tutorials/cp-cf-create-destination)
-- [サブスクリプションとインスタンスの作成](https://developers.sap.com/tutorials/btp-cockpit-instances/)
-- [BASの利用登録と起動](https://developers.sap.com/tutorials/appstudio-onboarding)
-- [Integration Suiteのホームとメニュー](https://help.sap.com/docs/integration-suite/sap-integration-suite/working-with-integration-suite-home)
-- [配送オプションの値の対応設定](https://help.sap.com/docs/SAP_Order_Management_Foundation/95fb0d8e21b9460b8e4690ebbc667d92/4273dccdaf774dd3a528cf62fa01d082.html)
-- [Groovyのステップとファイルの追加](https://github.com/SAP-docs/btp-integration-suite/blob/main/docs/ISuite_Integrations_APIs/define-a-local-script-step-03b32eb.md)
-- [EclipseでSAP Script APIを使う方法](https://help.sap.com/docs/integration-suite/sap-integration-suite/using-script-api-methods-in-groovy-scripts)
-- [スクリプト開発の指針](https://help.sap.com/docs/cloud-integration/sap-cloud-integration/general-scripting-guidelines)
-- [iFlowのシミュレーション設定](https://help.sap.com/docs/integration-suite/isuite-integrations-and-apis/configure-simulation?state=PRODUCTION)
-- [API Proxyの作成とテスト](https://developers.sap.com/tutorials/hcp-apim-create-api)
-
 
 ## 15. 2026-11-03追記：Sender・ReceiverとAdapter
 
@@ -625,4 +602,32 @@ Start → Message Mapping → Groovy Script → Request Reply
 - 本書は「概念 → 具体例 → 画面操作 → 設計上の注意 → 演習」の順に参照する学習ノートとする。
 - 設定画面名や提供機能は変更される場合があるため、実施時は利用環境のSAP公式ヘルプを優先する。
 - 既存章の学習記録を残し、新しい知識は関連章への追記または新章で管理する。
+- 参考資料は文末にまとめ、必要に応じて本文の関連箇所から参照する。
 - 学習用の仮例と実案件で確定した仕様を混同しない。
+
+---
+
+## 参考資料・公式ドキュメント
+
+- [SAP Integration Suiteの概要](https://learning.sap.com/courses/exploring-sap-platform-capabilities/illustrating-the-sap-integration-suite_b1c98a93-d3ca-4121-88ef-36bd397fae52)
+- [パッケージとiFlowの作成・デプロイ](https://developers.sap.com/tutorials/cp-starter-integration-cpi-design-iflow)
+- [Cloud Integrationの処理機能](https://help.sap.com/docs/cloud-integration/sap-cloud-integration/integration-capabilities?locale=en)
+- [外部APIを呼び出すRequest Reply](https://help.sap.com/docs/integration-suite/sap-integration-suite/define-request-reply)
+- [CAP Javaのサービス公開](https://cap.cloud.sap/docs/java/cqn-services/application-services)
+- [Apache Groovy](https://groovy-lang.org/)
+- [認証情報（User Credentials）の登録](https://help.sap.com/docs/integration-suite/isuite-integrations-and-apis/deploying-user-credentials-artifact)
+- [HTTP受信アダプター](https://help.sap.com/docs/integration-suite/sap-integration-suite/http-receiver-adapter)
+- [OData V4受信アダプター](https://help.sap.com/docs/cloud-integration/sap-cloud-integration/configure-odata-v4-receiver-adapter)
+- [RFC受信アダプターとRFC Destination](https://help.sap.com/docs/integration-suite/sap-integration-suite/rfc-receiver-adapter)
+- [BTP Destinationの作成](https://developers.sap.com/tutorials/cp-cf-create-destination)
+- [サブスクリプションとインスタンスの作成](https://developers.sap.com/tutorials/btp-cockpit-instances/)
+- [BASの利用登録と起動](https://developers.sap.com/tutorials/appstudio-onboarding)
+- [Integration Suiteのホームとメニュー](https://help.sap.com/docs/integration-suite/sap-integration-suite/working-with-integration-suite-home)
+- [配送オプションの値の対応設定](https://help.sap.com/docs/SAP_Order_Management_Foundation/95fb0d8e21b9460b8e4690ebbc667d92/4273dccdaf774dd3a528cf62fa01d082.html)
+- [Groovyのステップとファイルの追加](https://github.com/SAP-docs/btp-integration-suite/blob/main/docs/ISuite_Integrations_APIs/define-a-local-script-step-03b32eb.md)
+- [EclipseでSAP Script APIを使う方法](https://help.sap.com/docs/integration-suite/sap-integration-suite/using-script-api-methods-in-groovy-scripts)
+- [スクリプト開発の指針](https://help.sap.com/docs/cloud-integration/sap-cloud-integration/general-scripting-guidelines)
+- [iFlowのシミュレーション設定](https://help.sap.com/docs/integration-suite/isuite-integrations-and-apis/configure-simulation?state=PRODUCTION)
+- [API Proxyの作成とテスト](https://developers.sap.com/tutorials/hcp-apim-create-api)
+
+
