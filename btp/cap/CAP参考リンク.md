@@ -17,6 +17,16 @@ CAP（Node.js / JavaScript）を学ぶために参照できる、公開 GitHub �
 | CAP + HANA + Fiori の実践構成 | [cloud-cap-hana-swapi](https://github.com/SAP-samples/cloud-cap-hana-swapi) | データモデル、サービス CDS、Fiori annotation、Node.js ハンドラ、テスト |
 | Fiori elements の画面設定 | [fiori-elements-feature-showcase](https://github.com/SAP-samples/fiori-elements-feature-showcase) | List Report、Object Page、Draft、Action、初期ソート・フィルター |
 | CAP CDS の学習 | [cap-cds-hands-on](https://github.com/SAP-samples/cap-cds-hands-on) | CDS のデータモデル、関連、サービス定義 |
+| CAP Java の基本・実践 | [cloud-cap-samples-java](https://github.com/SAP-samples/cloud-cap-samples-java) | CDS、OData V4、Fiori、Spring Boot、Java の Event Handler |
+
+
+## CAP Java の例
+
+- [cloud-cap-samples-java](https://github.com/SAP-samples/cloud-cap-samples-java) は、SAP が公開している CAP Java SDK の公式サンプルです。
+- 本の管理・注文処理を題材に、CDS のデータモデル、OData V4、Fiori、H2 / SAP HANA、Java の Custom Event Handler を確認できます。
+- Java で実装する業務処理は主に `srv/src/main/java` 配下に置かれます。CAP Node.js の `srv/*.js` に相当する役割です。
+- `db/*.cds` や `srv/*.cds` などの CDS は、CAP Node.js / JavaScript / TypeScript と同じ書き方で共通して使えます。
+- ローカル起動には Java 21 と Maven が必要です。詳細はリポジトリの README を確認してください。
 
 ## 今回の資料との対応
 
