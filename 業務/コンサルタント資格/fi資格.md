@@ -19,6 +19,52 @@ SAP FI（Financial Accounting：財務会計）関連の代表的な認定資格
 | 合格基準 | **60%** | **61%** |
 | 公式URL | [C_TS4FI](https://learning.sap.com/certifications/sap-certified-associate-sap-s-4hana-for-financial-accounting) | [C_S4CFI](https://learning.sap.com/certifications/sap-certified-associate-implementation-consultant-sap-s-4hana-cloud-public-edition-financial-accounting-1) |
 
+## 1.1. C_TS4FI と C_S4CFI の違い：何を選ぶべきか？
+
+**結論：両方ともFIコンサルタントに関連する認定資格で、違いは主に対象のS/4HANAエディションです。** 「FIコンサルタント」という職種名から資格コードを1つに特定することはできません。
+
+### 対象製品と実務の違い
+
+| 観点 | **C_TS4FI** | **C_S4CFI** |
+|---|---|---|
+| 正式な対象 | **SAP S/4HANA Cloud Private Edition** のFinancial Accounting | **SAP S/4HANA Cloud Public Edition** のFinancial Accounting |
+| 向いている担当業務 | Private EditionのFI設定・導入・運用、顧客固有の要件対応 | Public EditionのFI標準プロセス導入、Fit-to-Standardに沿った設定 |
+| 業務プロセス | G/L、AP、AR、固定資産、決算など | G/L、AP、AR、固定資産、決算など（FIの基本知識は共通） |
+| 設定・導入の特徴 | IMG（SPRO）を含む幅広いCustomizingが可能 | SAP Central Business Configuration（CBC）や提供された設定アプリを中心に標準化された範囲で設定 |
+| 拡張・変更 | 顧客固有の拡張に幅広く対応できる。クラシック拡張も利用可能だが、クリーンコアの方針に注意 | 公開API・リリース済みオブジェクト、Key User／Developer／BTP拡張など、クラウドに適した方法を使用 |
+| SAP GUI / Fiori | SAP GUIのT-codeやFioriアプリなどを使用 | Fioriアプリ中心。従来のT-code操作がそのまま使えるとは限らない |
+| On-Premiseとの関係 | **Private EditionとOn-Premiseは同じソフトウェアコード・近い機能範囲**。従来のFI知識を活かしやすい | Public Editionは独自の標準化・導入方式があるため、追加学習が必要 |
+| 試験 | 3時間、英語、実技（System Based）、合格基準60% | 3時間、英語、実技（System Based）、合格基準61% |
+
+**重要：** C_TS4FIの**公式資格名はPrivate Edition**です。「On-Premiseの認定資格」という正式名称ではありません。ただし、Private EditionとOn-Premiseはソフトウェアコード・業務機能・設定方法に共通点が多いため、On-Premise経験者にとって関連性の高い資格です。Private EditionとOn-Premiseは、契約・インフラ運用・アップグレード責任まで同一という意味ではありません。
+
+出典：
+- [SAP公式：Private / Public / On-Premiseの製品比較（Offering Comparison）](https://help.sap.com/docs/SAP_S4HANA_CLOUD_PE/b89b8b9026e1456bb2a1df7c0d59c937/1485d139460246d2a4b936c0bb0ca272.html)
+- [SAP公式：Private EditionとOn-Premiseの共通コード・違い](https://learning.sap.com/courses/exploring-sap-cloud-erp/describing-the-technical-layers-and-deployment-variants-of-sap-s-4hana_b81ddd87-646f-4c28-89e0-e29815cb59d5)
+- [SAP公式：C_TS4FIの試験情報](https://learning.sap.com/certifications/sap-certified-associate-sap-s-4hana-for-financial-accounting)
+- [SAP公式：C_S4CFIの試験情報](https://learning.sap.com/certifications/sap-certified-associate-implementation-consultant-sap-s-4hana-cloud-public-edition-financial-accounting-1)
+
+### 「FIコンサルタント」と言うと、普通はどちら？
+
+- **「FIコンサルタント」＝SAP FIの導入、設定、業務要件整理、テスト、運用保守などを担当する職種**です。資格名ではありません。**資格保有が法律上の必須条件ではなく、C_TS4FIとC_S4CFIのどちらかを自動的に意味することもありません。**
+- 従来のSAP ERP、S/4HANA On-Premise、Private Editionに関係する案件では、**C_TS4FIの学習内容がより直接的に役立ちます**。
+- S/4HANA Cloud **Public Editionの導入・Fit-to-Standard案件**では、**C_S4CFI**が直接対応する資格です。
+- どちらの保有者が「多いか」を断定できる**公式の保有者数・求人割合データは確認していません**。そのため「FIコンサルタントは普通C_TS4FIを持っている」とまでは言えません。
+- 資格名に「Implementation Consultant」が含まれるのはC_S4CFIですが、**C_TS4FIでもFIコンサルタントを目指せます**。名称だけで上位・下位を判断しないでください。
+
+### 最初に取得する資格の選び方
+
+| 現在・今後の仕事 | 最初の候補 | 理由 |
+|---|---|---|
+| SAP GUI / SPRO / OB52 / FS00 / FB60などを使った従来型FI設定や業務を学んでいる | **C_TS4FI** | Private Edition / On-Premiseに近い設定・会計処理を学べる |
+| ECCからS/4HANAへの移行、Private EditionのFI導入・運用を担当したい | **C_TS4FI** | 顧客固有のCustomizingや既存システムの知識を活かせる |
+| SAP S/4HANA Cloud Public Editionの新規導入、標準プロセス採用、CBCを担当したい | **C_S4CFI** | Public Edition固有の導入・設定方式に対応 |
+| 将来両方の案件を担当したい | **現在の案件に近い方を先に** | FIの基礎知識は共通。必要に応じてもう一方を追加 |
+
+**学習上のおすすめ：** 既にOB52、FS00、FB60、F-44などのSAP GUIのFI処理を学んでいる場合は、**まずC_TS4FI**を目標にするのが自然です。ただし、就業先・応募先がPublic Edition案件中心ならC_S4CFIを優先してください。資格は実務経験の代替にはなりません。
+
+---
+
 **「1 Activity」＝「問題が1問だけ」という意味ではありません。** 1つの実技評価の中に複数の操作タスクが含まれる可能性がありますが、公式ページでは個別タスク数は公表されていません。
 
 ### 過去の試験形式との違い
