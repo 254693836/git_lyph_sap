@@ -15,9 +15,9 @@
 | 301〜350 | 資産・取得・償却・除却 | 応用 | [日本語](11_固定資産会計.md) / [English](11_Fixed_Asset_Accounting_EN.md) |
 | 351〜400 | 決算・Universal Journal・MM/SD/CO | 応用 | [日本語](12_決算と連携.md) / [English](12_Financial_Closing_and_Integration_EN.md) |
 | 401〜450 | エラー調査・設定不備・原因切り分け | 実務 | [日本語](13_障害対応と実務ケース.md) / [English](13_FI_Troubleshooting_and_Practical_Cases_EN.md) |
-| 451〜500 | 総合ケース・計算・移行・テスト | 総合 | [問題・解答・解説](14_総合演習.md) |
+| 451〜500 | 総合ケース・計算・移行・テスト | 総合 | [日本語](14_総合演習.md) / [English](14_Comprehensive_FI_Practice_EN.md) |
 
-※英語版は現在、第1〜450問です。第451〜500問は日本語版です。
+※英語版は第1〜500問まで完成しました。すべて日本語版・英語版を用意しています。
 
 ## 学習順序と到達目標
 
